@@ -1,0 +1,5 @@
+CREATE TABLE todos(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    content VARCHAR(100),
+    due DATETIME
+);
