@@ -46,6 +46,10 @@ def webhook():
         return 'Updated PythonAnywhere successfully', 200
     return 'Unathorized', 401
 
+@app.get("/user")
+def user():
+    return "Hello Users";
+
 # Auth routes
 @app.route("/login", methods=["GET", "POST"])
 def login():
