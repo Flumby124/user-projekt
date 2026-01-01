@@ -136,3 +136,17 @@ def logout():
 
 #if __name__ == "__main__":
 #    app.run()
+
+@app.route("/", methods=["GET"])
+@login_required
+def index():
+    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
+    sales = db_read("""
+        SELECT pc.name, sales.verkaufspreis, sales.verkauft_am,
+               (sales.verkaufspreis - pc.gesamtpreis) AS profit
+        FROM sales
+        JOIN pc ON pc.id = sales.pc_id
+        ORDER BY sales.verkauft_am DESC
+    """)
+
+    return render_template("dashboard.html", pcs=pcs, sales=sales)
