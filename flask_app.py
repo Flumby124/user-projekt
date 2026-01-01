@@ -151,7 +151,7 @@ def index():
 
     return render_template("dashboard.html", pcs=pcs, sales=sales)
 
-@app.route("/pcs")
+@app.route("/pc")
 @login_required
 def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
@@ -173,9 +173,12 @@ def pc_new():
 @login_required
 def pc_detail(pc_id):
     pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), one=True)
+    if not pc:
+        return "PC nicht gefunden", 404
     components = db_read("SELECT * FROM pc_komponenten WHERE pc_id=%s", (pc_id,))
 
     return render_template("pc_detail.html", pc=pc, components=components)
+    
 
 @app.route("/pc/<int:pc_id>/add", methods=["GET", "POST"])
 @login_required
@@ -214,6 +217,8 @@ def sell_pc(pc_id):
         preis = float(request.form["verkaufspreis"])
 
         db_write("INSERT INTO sales (pc_id, verkaufspreis) VALUES (%s, %s)", (pc_id, preis))
+       
+        db_write("UPDATE pc SET status='verkauft' WHERE id=%s", (pc_id,))
 
         return redirect(url_for("index"))
 
