@@ -1,30 +1,45 @@
-{{% extends "base.html" %}
+{% extends "base.html" %}
 {% block content %}
 
-<h1>Neuen PC erstellen</h1>
-
-<form method="POST" class="form-horizontal">
-
-  <div class="form-group">
-    <label class="col-sm-2 control-label">PC Name</label>
-    <div class="col-sm-10">
-      <input type="text" name="name" class="form-control" placeholder="z.B. Gaming Beast 3000" required>
-    </div>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Neuen PC erstellen</h3>
   </div>
 
-  <div class="form-group">
-    <label class="col-sm-2 control-label">Status</label>
-    <div class="col-sm-10">
-      <select name="status" class="form-control">
-        <option value="gebaut">gebaut</option>
-        <option value="in bau">in Bau</option>
-        <option value="geplant">geplant</option>
-      </select>
-    </div>
+  <div class="panel-body">
+
+    <form method="POST" class="form-horizontal">
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">PC Name</label>
+        <div class="col-sm-10">
+          <input type="text" name="name" class="form-control"
+                 placeholder="z.B. Gaming Beast 3000" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="col-sm-2 control-label">Status</label>
+        <div class="col-sm-10">
+          <select name="status" class="form-control">
+            <option value="gebaut">gebaut</option>
+            <option value="in bau">in Bau</option>
+            <option value="geplant">geplant</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <button type="submit" class="btn btn-primary btn-lg">
+            PC erstellen
+          </button>
+        </div>
+      </div>
+
+    </form>
+
   </div>
-
-  <button type="submit" class="btn btn-primary">PC erstellen</button>
-
-</form>
+</div>
 
 {% endblock %}

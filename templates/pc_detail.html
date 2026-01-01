@@ -1,41 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>PC: {{ pc[0].name }}</h1>
+<h1>{{ pc[0].name }}</h1>
 <p>Status: {{ pc[0].status }}</p>
-<p>Gesamtpreis: {{ pc[0].gesamtpreis }} CHF</p>
+<p><strong>Gesamtpreis: {{ pc[0].gesamtpreis }} CHF</strong></p>
 
-<h2>Komponenten hinzufügen</h2>
+<hr>
 
-<div class="component-buttons">
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='cpu') }}">CPU hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='gpu') }}">GPU hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='ram') }}">RAM hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='ssd') }}">SSD hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='psu') }}">Netzteil hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='pc_case') }}">Gehäuse hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='fans') }}">Lüfter hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='kuehler') }}">Kühler hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='argb') }}">ARGB hinzufügen</a>
-    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='extensions') }}">Extensions hinzufügen</a>
+<h3>Komponenten hinzufügen</h3>
+
+<div class="btn-group">
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='cpu') }}">CPU</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='gpu') }}">GPU</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='ram') }}">RAM</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='ssd') }}">SSD</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='psu') }}">Netzteil</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='pc_case') }}">Gehäuse</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='fans') }}">Lüfter</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='kuehler') }}">Kühler</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='argb') }}">ARGB</a>
+  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='extensions') }}">Extensions</a>
 </div>
 
-<h2>Bereits hinzugefügt</h2>
+<hr>
 
-<table>
-    <tr>
-        <th>Typ</th>
-        <th>Preis</th>
-    </tr>
+<h3>Bereits hinzugefügt</h3>
 
-    {% for k in komponenten %}
-    <tr>
-        <td>{{ k.typ }}</td>
-        <td>{{ k.preis }} CHF</td>
-    </tr>
-    {% endfor %}
+<table class="table table-striped">
+  <tr>
+    <th>Typ</th>
+    <th>Preis</th>
+  </tr>
+
+  {% for k in komponenten %}
+  <tr>
+    <td>{{ k.typ }}</td>
+    <td>{{ k.preis }} CHF</td>
+  </tr>
+  {% endfor %}
 </table>
 
-<a href="{{ url_for('sell_pc', pc_id=pc[0].id) }}" class="sell-button">PC verkaufen</a>
+<a href="{{ url_for('sell_pc', pc_id=pc[0].id) }}" class="btn btn-danger btn-lg">
+  PC verkaufen
+</a>
 
 {% endblock %}
