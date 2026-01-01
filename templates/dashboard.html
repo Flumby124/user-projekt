@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Dashboard</h2>
+
+<h3>🖥️ Deine PCs</h3>
+<ul class="list-group">
+  {% for pc in pcs %}
+    <li class="list-group-item">
+      <strong>{{ pc.name }}</strong>  
+      – Status: {{ pc.status }}  
+      – Gesamtpreis: {{ pc.gesamtpreis }}€
+
+      <a href="{{ url_for('pc_detail', pc_id=pc.id) }}" class="btn btn-xs btn-primary pull-right">
+        Öffnen
+      </a>
+    </li>
+  {% else %}
+    <p>Keine PCs vorhanden.</p>
+  {% endfor %}
+</ul>
+
+<hr>
+
+<h3>💰 Verkäufe</h3>
+<ul class="list-group">
+  {% for sale in sales %}
+    <li class="list-group-item">
+      <strong>{{ sale.name }}</strong><br>
+      Verkaufspreis: {{ sale.verkaufspreis }}€<br>
+      Profit: <strong>{{ sale.profit }}€</strong><br>
+      Am: {{ sale.verkauft_am }}
+    </li>
+  {% else %}
+    <p>Noch keine Verkäufe.</p>
+  {% endfor %}
+</ul>
+
+<a href="{{ url_for('pc_new') }}" class="btn btn-success" style="margin-top:20px;">
+  ➕ Neuen PC erstellen
+</a>
+{% endblock %}
