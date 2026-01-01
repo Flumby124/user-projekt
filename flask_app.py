@@ -224,3 +224,6 @@ def sell_pc(pc_id):
 
     pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), single=True)
     return render_template("sell_pc.html", pc=pc)
+
+from flask import Flask 
+app = Flask(__name__)
