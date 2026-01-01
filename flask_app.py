@@ -228,7 +228,7 @@ def component_new(typ):
         else:
             db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
 
-        return redirect(url_for("component_new", typ=typ))
+        return redirect(url_for("component_new_page", typ=typ))
 
     return render_template("component_new.html", typ=typ)
 
