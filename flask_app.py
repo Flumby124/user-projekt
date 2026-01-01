@@ -168,3 +168,11 @@ def pc_new():
         return redirect(url_for("pc_list"))
 
     return render_template("pc_new.html")
+
+@app.route("/pc/<int:pc_id>")
+@login_required
+def pc_detail(pc_id):
+    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), one=True)
+    components = db_read("SELECT * FROM pc_komponenten WHERE pc_id=%s", (pc_id,))
+
+    return render_template("pc_detail.html", pc=pc, components=components)
