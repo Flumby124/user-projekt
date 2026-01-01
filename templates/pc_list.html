@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Alle PCs</h2>
+
+<a href="{{ url_for('pc_new') }}" class="btn btn-success">➕ PC erstellen</a>
+
+<ul class="list-group" style="margin-top:20px;">
+  {% for pc in pcs %}
+    <li class="list-group-item">
+      <strong>{{ pc.name }}</strong> – {{ pc.status }}
+      <a href="{{ url_for('pc_detail', pc_id=pc.id) }}" class="btn btn-primary btn-xs pull-right">
+        Öffnen
+      </a>
+    </li>
+  {% else %}
+    <p>Keine PCs vorhanden.</p>
+  {% endfor %}
+</ul>
+{% endblock %}
