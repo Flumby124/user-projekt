@@ -151,7 +151,7 @@ def index():
 
     return render_template("dashboard.html", pcs=pcs, sales=sales)
 
-@app.route("/pc")
+@app.route("/pcs")
 @login_required
 def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
