@@ -27,13 +27,16 @@ app.secret_key = "supersecret"
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-# Valid component types (SQL injection prevention)
+# Valid component types
 VALID_TYPES = [
     "cpu", "gpu", "ram", "psu", "ssd", "pc_case",
     "fans", "kuehler", "argb", "extensions", "mobo"
 ]
 
-# DON'T CHANGE
+
+# GITHUB WEBHOOK (DON'T TOUCH)
+
+
 def is_valid_signature(x_hub_signature, data, private_key):
     hash_algorithm, github_signature = x_hub_signature.split('=', 1)
     algorithm = hashlib.__dict__.get(hash_algorithm)
@@ -41,7 +44,6 @@ def is_valid_signature(x_hub_signature, data, private_key):
     mac = hmac.new(encoded_key, msg=data, digestmod=algorithm)
     return hmac.compare_digest(mac.hexdigest(), github_signature)
 
-# DON'T CHANGE
 @app.post('/update_server')
 def webhook():
     x_hub_signature = request.headers.get('X-Hub-Signature')
@@ -51,6 +53,8 @@ def webhook():
         origin.pull()
         return 'Updated PythonAnywhere successfully', 200
     return 'Unauthorized', 401
+
+
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -115,7 +119,8 @@ def logout():
 
 
 
-@app.route("/", methods=["GET"])
+
+@app.route("/")
 @login_required
 def index():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
@@ -135,28 +140,6 @@ def index():
 def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
     return render_template("pc_list.html", pcs=pcs)
-
-@app.route("/components/new/<typ>", methods=["GET", "POST"])
-@login_required
-def component_new(typ):
-
-    if typ not in VALID_TYPES:
-        return "Ungültiger Komponententyp", 400
-
-    if request.method == "POST":
-        marke = request.form.get("marke")
-        modell = request.form.get("modell")
-        preis = request.form.get("preis")
-
-        # In die richtige Tabelle einfügen
-        db_write(
-            f"INSERT INTO {typ} (marke, modell, preis) VALUES (%s, %s, %s)",
-            (marke, modell, preis)
-        )
-
-        return redirect(url_for("component_new", typ=typ))
-
-    return render_template("component_new.html", typ=typ)
 
 
 @app.route("/pc/new", methods=["GET", "POST"])
@@ -181,6 +164,68 @@ def pc_detail(pc_id):
 
 
 
+
+@app.route("/components/new/<typ>", methods=["GET", "POST"])
+@login_required
+def component_new(typ):
+
+    if typ not in VALID_TYPES:
+        return "Ungültiger Komponententyp", 400
+
+    if request.method == "POST":
+        marke = request.form.get("marke")
+        modell = request.form.get("modell")
+        preis = request.form.get("preis")
+        anzahl = request.form.get("anzahl", 1)
+
+      
+        db_write("""
+            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
+            VALUES (%s, %s, %s, %s, %s, NULL)
+        """, (typ, marke, modell, preis, anzahl))
+
+        
+        komp_id = db_read("SELECT LAST_INSERT_ID() AS id")[0]["id"]
+
+        if typ == "cpu":
+            db_write(
+                "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
+                (komp_id, request.form.get("frequenz_ghz"), request.form.get("watt"))
+            )
+
+        elif typ == "gpu":
+            db_write(
+                "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
+                (komp_id, request.form.get("vram"))
+            )
+
+        elif typ == "ram":
+            db_write(
+                "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
+                (komp_id, request.form.get("speichermenge_gb"), request.form.get("cl_rating"))
+            )
+
+        elif typ == "psu":
+            db_write(
+                "INSERT INTO psu (id, watt) VALUES (%s, %s)",
+                (komp_id, request.form.get("watt"))
+            )
+
+        elif typ == "ssd":
+            db_write(
+                "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)",
+                (komp_id, request.form.get("speichermenge_gb"))
+            )
+
+        else:
+            db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
+
+        return redirect(url_for("component_new", typ=typ))
+
+    return render_template("component_new.html", typ=typ)
+
+
+
 @app.route("/pc/<int:pc_id>/add/<typ>")
 @login_required
 def add_component_list(pc_id, typ):
@@ -188,7 +233,7 @@ def add_component_list(pc_id, typ):
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
-    items = db_read(f"SELECT * FROM {typ}")
+    items = db_read("SELECT * FROM pc_komponenten WHERE typ=%s AND pc_id IS NULL", (typ,))
     return render_template("component_list.html", items=items, typ=typ, pc_id=pc_id)
 
 
@@ -200,93 +245,28 @@ def add_component(pc_id, typ, item_id):
         return "Ungültiger Komponententyp", 400
 
     
-    preis = db_read(f"SELECT preis FROM {typ} WHERE id=%s", (item_id,), single=True)
-
+    preis = db_read("SELECT preis FROM pc_komponenten WHERE id=%s", (item_id,))
     if not preis:
         return "Komponente nicht gefunden", 404
 
-    
-    db_write("""
-        INSERT INTO pc_komponenten (typ, pc_id, preis)
-        VALUES (%s, %s, %s)
-    """, (typ, pc_id, preis["preis"]))
+    preis = preis[0]["preis"]
 
-    
+  
+    db_write("""
+        UPDATE pc_komponenten
+        SET pc_id = %s
+        WHERE id = %s
+    """, (pc_id, item_id))
+
+  
     db_write("""
         UPDATE pc
         SET gesamtpreis = gesamtpreis + %s
         WHERE id = %s
-    """, (preis["preis"], pc_id))
+    """, (preis, pc_id))
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
 
-@app.route("/components/new/<typ>", methods=["GET", "POST"])
-@login_required
-def component_new(typ):
-    if typ not in VALID_TYPES:
-        return "Ungültiger Komponententyp", 400
-
-    if request.method == "POST":
-        marke = request.form.get("marke")
-        modell = request.form.get("modell")
-        preis = request.form.get("preis")
-        anzahl = request.form.get("anzahl", 1)
-
-        
-        db_write("""
-        INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
-        VALUES (%s, %s, %s, %s, %s, NULL)
-        """, (typ, marke, modell, preis, anzahl))
-
-
-        komp_id = db_read("SELECT LAST_INSERT_ID() AS id", single=True)["id"]
-
-        
-        if typ == "cpu":
-            frequenz = request.form.get("frequenz_ghz")
-            watt = request.form.get("watt")
-            db_write(
-                "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
-                (komp_id, frequenz, watt)
-            )
-
-        elif typ == "gpu":
-            vram = request.form.get("vram")
-            db_write(
-                "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
-                (komp_id, vram)
-            )
-
-        elif typ == "ram":
-            speicher = request.form.get("speichermenge_gb")
-            cl = request.form.get("cl_rating")
-            db_write(
-                "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
-                (komp_id, speicher, cl)
-            )
-
-        elif typ == "psu":
-            watt = request.form.get("watt")
-            db_write(
-                "INSERT INTO psu (id, watt) VALUES (%s, %s)",
-                (komp_id, watt)
-            )
-
-        elif typ == "ssd":
-            speicher = request.form.get("speichermenge_gb")
-            db_write(
-                "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)",
-                (komp_id, speicher)
-            )
-
-        elif typ in ["pc_case", "fans", "kuehler", "argb", "extensions", "mobo"]:
-            # Haben aktuell nur die ID als FK
-            table = typ
-            db_write(f"INSERT INTO {table} (id) VALUES (%s)", (komp_id,))
-
-        return redirect(url_for("component_new", typ=typ))
-
-    return render_template("component_new.html", typ=typ)
 
 
 
@@ -301,5 +281,5 @@ def sell_pc(pc_id):
 
         return redirect(url_for("index"))
 
-    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), single=True)
+    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,))
     return render_template("sell_pc.html", pc=pc)
