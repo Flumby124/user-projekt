@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>{{ pc.name }}</h2>
+
+<p>Status: {{ pc.status }}</p>
+<p>Gesamtpreis: {{ pc.gesamtpreis }}€</p>
+
+<hr>
+
+<h3>Komponenten</h3>
+
+<ul class="list-group">
+  {% for c in components %}
+    <li class="list-group-item">
+      <strong>{{ c.typ }}</strong> – {{ c.marke }} {{ c.modell }}
+      ({{ c.anzahl }}×, {{ c.preis }}€)
+    </li>
+  {% else %}
+    <p>Keine Komponenten vorhanden.</p>
+  {% endfor %}
+</ul>
+
+<a href="{{ url_for('add_component', pc_id=pc.id) }}" class="btn btn-primary" style="margin-top:20px;">
+  ➕ Komponente hinzufügen
+</a>
+
+<a href="{{ url_for('sell_pc', pc_id=pc.id) }}" class="btn btn-success" style="margin-top:20px;">
+  💰 Verkauf eintragen
+</a>
+
+{% endblock %}
