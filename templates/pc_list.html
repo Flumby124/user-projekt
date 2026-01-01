@@ -1,20 +1,26 @@
 {% extends "base.html" %}
-
 {% block content %}
-<h2>Alle PCs</h2>
 
-<a href="{{ url_for('pc_new') }}" class="btn btn-success">➕ PC erstellen</a>
+<h1>Alle PCs</h1>
 
-<ul class="list-group" style="margin-top:20px;">
-  {% for pc in pcs %}
-    <li class="list-group-item">
-      <strong>{{ pc.name }}</strong> – {{ pc.status }}
-      <a href="{{ url_for('pc_detail', pc_id=pc.id) }}" class="btn btn-primary btn-xs pull-right">
-        Öffnen
-      </a>
-    </li>
-  {% else %}
-    <p>Keine PCs vorhanden.</p>
-  {% endfor %}
-</ul>
+<a href="{{ url_for('pc_new') }}" class="button">Neuen PC erstellen</a>
+
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Preis</th>
+        <th>Aktion</th>
+    </tr>
+
+    {% for pc in pcs %}
+    <tr>
+        <td>{{ pc.name }}</td>
+        <td>{{ pc.status }}</td>
+        <td>{{ pc.gesamtpreis }} CHF</td>
+        <td><a href="{{ url_for('pc_detail', pc_id=pc.id) }}">Öffnen</a></td>
+    </tr>
+    {% endfor %}
+</table>
+
 {% endblock %}

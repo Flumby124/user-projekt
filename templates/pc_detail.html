@@ -1,32 +1,41 @@
 {% extends "base.html" %}
-
 {% block content %}
-<h2>{{ pc.name }}</h2>
 
-<p>Status: {{ pc.status }}</p>
-<p>Gesamtpreis: {{ pc.gesamtpreis }}€</p>
+<h1>PC: {{ pc[0].name }}</h1>
+<p>Status: {{ pc[0].status }}</p>
+<p>Gesamtpreis: {{ pc[0].gesamtpreis }} CHF</p>
 
-<hr>
+<h2>Komponenten hinzufügen</h2>
 
-<h3>Komponenten</h3>
+<div class="component-buttons">
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='cpu') }}">CPU hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='gpu') }}">GPU hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='ram') }}">RAM hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='ssd') }}">SSD hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='psu') }}">Netzteil hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='pc_case') }}">Gehäuse hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='fans') }}">Lüfter hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='kuehler') }}">Kühler hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='argb') }}">ARGB hinzufügen</a>
+    <a href="{{ url_for('add_component_list', pc_id=pc[0].id, typ='extensions') }}">Extensions hinzufügen</a>
+</div>
 
-<ul class="list-group">
-  {% for c in components %}
-    <li class="list-group-item">
-      <strong>{{ c.typ }}</strong> – {{ c.marke }} {{ c.modell }}
-      ({{ c.anzahl }}×, {{ c.preis }}€)
-    </li>
-  {% else %}
-    <p>Keine Komponenten vorhanden.</p>
-  {% endfor %}
-</ul>
+<h2>Bereits hinzugefügt</h2>
 
-<a href="{{ url_for('add_component', pc_id=pc.id) }}" class="btn btn-primary" style="margin-top:20px;">
-  ➕ Komponente hinzufügen
-</a>
+<table>
+    <tr>
+        <th>Typ</th>
+        <th>Preis</th>
+    </tr>
 
-<a href="{{ url_for('sell_pc', pc_id=pc.id) }}" class="btn btn-success" style="margin-top:20px;">
-  💰 Verkauf eintragen
-</a>
+    {% for k in komponenten %}
+    <tr>
+        <td>{{ k.typ }}</td>
+        <td>{{ k.preis }} CHF</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="{{ url_for('sell_pc', pc_id=pc[0].id) }}" class="sell-button">PC verkaufen</a>
 
 {% endblock %}
