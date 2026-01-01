@@ -156,3 +156,15 @@ def index():
 def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
     return render_template("pc_list.html", pcs=pcs)
+
+@app.route("/pc/new", methods=["GET", "POST"])
+@login_required
+def pc_new():
+    if request.method == "POST":
+        name = request.form["name"]
+        status = request.form.get("status", "gebaut")
+
+        db_write("INSERT INTO pc (name, status) VALUES (%s, %s)", (name, status))
+        return redirect(url_for("pc_list"))
+
+    return render_template("pc_new.html")
