@@ -1,3 +1,5 @@
+print(">>> LOADING FLASK_APP")
+
 from flask import Flask, redirect, render_template, request, url_for
 from dotenv import load_dotenv
 import os
@@ -284,3 +286,4 @@ def sell_pc(pc_id):
     pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,))
     return render_template("sell_pc.html", pc=pc)
 
+print(">>> FINISHED LOADING FLASK_APP")
