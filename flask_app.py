@@ -27,6 +27,12 @@ app.secret_key = "supersecret"
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
+# Valid component types (SQL injection prevention)
+VALID_TYPES = [
+    "cpu", "gpu", "ram", "psu", "ssd", "pc_case",
+    "fans", "kuehler", "argb", "extensions", "mobo"
+]
+
 # DON'T CHANGE
 def is_valid_signature(x_hub_signature, data, private_key):
     hash_algorithm, github_signature = x_hub_signature.split('=', 1)
@@ -44,13 +50,9 @@ def webhook():
         origin = repo.remotes.origin
         origin.pull()
         return 'Updated PythonAnywhere successfully', 200
-    return 'Unathorized', 401
+    return 'Unauthorized', 401
 
-@app.get("/user")
-def user():
-    return "Hello Users";
 
-# Auth routes
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -104,6 +106,7 @@ def register():
         footer_link_label="Einloggen"
     )
 
+
 @app.route("/logout")
 @login_required
 def logout():
@@ -111,31 +114,6 @@ def logout():
     return redirect(url_for("index"))
 
 
-
-# App routes
-#@app.route("/", methods=["GET", "POST"])
-#@login_required
-#def index():
-    # GET
-    #if request.method == "GET":
-      #  todos = db_read("SELECT id, content, due FROM todos WHERE user_id=%s ORDER BY due", (current_user.id,))
-     #   return render_template("main_page.html", todos=todos)
-
-    # POST
-    #content = request.form["contents"]
-   # due = request.form["due_at"]
-  #  db_write("INSERT INTO todos (user_id, content, due) VALUES (%s, %s, %s)", (current_user.id, content, due, ))
- #   return redirect(url_for("index"))
-
-#@app.post("/complete")
-#@login_required
-#def complete():
-   # todo_id = request.form.get("id")
-  #  db_write("DELETE FROM todos WHERE user_id=%s AND id=%s", (current_user.id, todo_id,))
- #   return redirect(url_for("index"))
-
-#if __name__ == "__main__":
-#    app.run()
 
 @app.route("/", methods=["GET"])
 @login_required
@@ -151,11 +129,13 @@ def index():
 
     return render_template("dashboard.html", pcs=pcs, sales=sales)
 
+
 @app.route("/pcs")
 @login_required
 def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
     return render_template("pc_list.html", pcs=pcs)
+
 
 @app.route("/pc/new", methods=["GET", "POST"])
 @login_required
@@ -169,46 +149,57 @@ def pc_new():
 
     return render_template("pc_new.html")
 
+
 @app.route("/pc/<int:pc_id>")
 @login_required
 def pc_detail(pc_id):
-    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), single=True)
-    if not pc:
-        return "PC nicht gefunden", 404
-    components = db_read("SELECT * FROM pc_komponenten WHERE pc_id=%s", (pc_id,))
+    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,))
+    komponenten = db_read("SELECT * FROM pc_komponenten WHERE pc_id=%s", (pc_id,))
+    return render_template("pc_detail.html", pc=pc, komponenten=komponenten)
 
-    return render_template("pc_detail.html", pc=pc, components=components)
-    
 
-@app.route("/pc/<int:pc_id>/add", methods=["GET", "POST"])
+
+@app.route("/pc/<int:pc_id>/add/<typ>")
 @login_required
-def add_component(pc_id):
-    if request.method == "POST":
-        typ = request.form["typ"]
-        marke = request.form["marke"]
-        modell = request.form["modell"]
-        preis = float(request.form["preis"])
-        anzahl = int(request.form.get("anzahl", 1))
+def add_component_list(pc_id, typ):
 
-        db_write("""
-            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (typ, marke, modell, preis, anzahl, pc_id))
+    if typ not in VALID_TYPES:
+        return "Ungültiger Komponententyp", 400
 
-        # Gesamtpreis aktualisieren
-        db_write("""
-            UPDATE pc
-            SET gesamtpreis = (
-                SELECT SUM(preis * anzahl)
-                FROM pc_komponenten
-                WHERE pc_id = %s
-            )
-            WHERE id = %s
-        """, (pc_id, pc_id))
+    items = db_read(f"SELECT * FROM {typ}")
+    return render_template("component_list.html", items=items, typ=typ, pc_id=pc_id)
 
-        return redirect(url_for("pc_detail", pc_id=pc_id))
 
-    return render_template("add_component.html", pc_id=pc_id)
+@app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
+@login_required
+def add_component(pc_id, typ, item_id):
+
+    if typ not in VALID_TYPES:
+        return "Ungültiger Komponententyp", 400
+
+    
+    preis = db_read(f"SELECT preis FROM {typ} WHERE id=%s", (item_id,), single=True)
+
+    if not preis:
+        return "Komponente nicht gefunden", 404
+
+    
+    db_write("""
+        INSERT INTO pc_komponenten (typ, pc_id, preis)
+        VALUES (%s, %s, %s)
+    """, (typ, pc_id, preis["preis"]))
+
+    
+    db_write("""
+        UPDATE pc
+        SET gesamtpreis = gesamtpreis + %s
+        WHERE id = %s
+    """, (preis["preis"], pc_id))
+
+    return redirect(url_for("pc_detail", pc_id=pc_id))
+
+
+
 
 @app.route("/pc/<int:pc_id>/sell", methods=["GET", "POST"])
 @login_required
@@ -217,12 +208,9 @@ def sell_pc(pc_id):
         preis = float(request.form["verkaufspreis"])
 
         db_write("INSERT INTO sales (pc_id, verkaufspreis) VALUES (%s, %s)", (pc_id, preis))
-       
         db_write("UPDATE pc SET status='verkauft' WHERE id=%s", (pc_id,))
 
         return redirect(url_for("index"))
 
     pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), single=True)
     return render_template("sell_pc.html", pc=pc)
-
-
