@@ -232,17 +232,16 @@ def component_new(typ):
         preis = request.form.get("preis")
         anzahl = request.form.get("anzahl", 1)
 
-        # 1. In pc_komponenten einfügen (Inventar, noch keinem PC zugeordnet)
-        komp_id = db_write(
-            """
-            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
-            VALUES (%s, %s, %s, %s, %s, NULL)
-            """,
-            (typ, marke, modell, preis, anzahl),
-            return_id=True
-        )
+        
+        db_write("""
+        INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
+        VALUES (%s, %s, %s, %s, %s, NULL)
+        """, (typ, marke, modell, preis, anzahl))
 
-        # 2. In die spezifische Tabelle einfügen
+
+        komp_id = db_read("SELECT LAST_INSERT_ID() AS id", single=True)["id"]
+
+        
         if typ == "cpu":
             frequenz = request.form.get("frequenz_ghz")
             watt = request.form.get("watt")
