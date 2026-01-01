@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 login_manager = LoginManager()
 
 
+
 class User(UserMixin):
     def __init__(self, id, username, password):
         self.id = id
