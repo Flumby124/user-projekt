@@ -27,7 +27,7 @@ app.secret_key = "supersecret"
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-# Valid component types
+
 VALID_TYPES = [
     "cpu", "gpu", "ram", "psu", "ssd", "pc_case",
     "fans", "kuehler", "argb", "extensions", "mobo"
@@ -283,3 +283,7 @@ def sell_pc(pc_id):
 
     pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,))
     return render_template("sell_pc.html", pc=pc)
+
+print("REGISTERED ENDPOINTS:")
+for rule in app.url_map.iter_rules():
+    print(rule.endpoint, "->", rule.rule)
