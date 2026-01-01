@@ -61,16 +61,21 @@
 
             {% if current_user.is_authenticated %}
 
-              <li><a href="#">Hallo, {{ current_user.username }}</a></li>
-              <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            <li><a href="{{ url_for('index') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('pc_list') }}">PCs</a></li>
+            <li><a href="{{ url_for('pc_new') }}">PC erstellen</a></li>
+
+            <li><a href="#">Hallo, {{ current_user.username }}</a></li>
+            <li><a href="{{ url_for('logout') }}">Logout</a></li>
 
             {% else %}
 
-              <li><a href="{{ url_for('login') }}">Login</a></li>
-              <li><a href="{{ url_for('register') }}">Registrieren</a></li>
+            <li><a href="{{ url_for('login') }}">Login</a></li>
+            <li><a href="{{ url_for('register') }}">Registrieren</a></li>
 
             {% endif %}
-          </ul>
+            </ul>
+
         </div>
       </div>
     </nav>
