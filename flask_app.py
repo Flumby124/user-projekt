@@ -165,7 +165,7 @@ def pc_detail(pc_id):
 
 
 
-@app.route("/components/new/<typ>", methods=["GET", "POST"])
+@app.route("/components/new/<typ>", methods=["GET", "POST"], endpoint="component_new_page")
 @login_required
 def component_new(typ):
 
@@ -284,6 +284,3 @@ def sell_pc(pc_id):
     pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,))
     return render_template("sell_pc.html", pc=pc)
 
-print("REGISTERED ENDPOINTS:")
-for rule in app.url_map.iter_rules():
-    print(rule.endpoint, "->", rule.rule)
