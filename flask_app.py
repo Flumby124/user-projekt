@@ -206,3 +206,16 @@ def add_component(pc_id):
         return redirect(url_for("pc_detail", pc_id=pc_id))
 
     return render_template("add_component.html", pc_id=pc_id)
+
+@app.route("/pc/<int:pc_id>/sell", methods=["GET", "POST"])
+@login_required
+def sell_pc(pc_id):
+    if request.method == "POST":
+        preis = float(request.form["verkaufspreis"])
+
+        db_write("INSERT INTO sales (pc_id, verkaufspreis) VALUES (%s, %s)", (pc_id, preis))
+
+        return redirect(url_for("index"))
+
+    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), one=True)
+    return render_template("sell_pc.html", pc=pc)
