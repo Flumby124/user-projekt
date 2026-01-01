@@ -176,3 +176,33 @@ def pc_detail(pc_id):
     components = db_read("SELECT * FROM pc_komponenten WHERE pc_id=%s", (pc_id,))
 
     return render_template("pc_detail.html", pc=pc, components=components)
+
+@app.route("/pc/<int:pc_id>/add", methods=["GET", "POST"])
+@login_required
+def add_component(pc_id):
+    if request.method == "POST":
+        typ = request.form["typ"]
+        marke = request.form["marke"]
+        modell = request.form["modell"]
+        preis = float(request.form["preis"])
+        anzahl = int(request.form.get("anzahl", 1))
+
+        db_write("""
+            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (typ, marke, modell, preis, anzahl, pc_id))
+
+        # Gesamtpreis aktualisieren
+        db_write("""
+            UPDATE pc
+            SET gesamtpreis = (
+                SELECT SUM(preis * anzahl)
+                FROM pc_komponenten
+                WHERE pc_id = %s
+            )
+            WHERE id = %s
+        """, (pc_id, pc_id))
+
+        return redirect(url_for("pc_detail", pc_id=pc_id))
+
+    return render_template("add_component.html", pc_id=pc_id)
