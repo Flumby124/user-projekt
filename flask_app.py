@@ -220,6 +220,74 @@ def add_component(pc_id, typ, item_id):
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
 
+@app.route("/components/new/<typ>", methods=["GET", "POST"])
+@login_required
+def component_new(typ):
+    if typ not in VALID_TYPES:
+        return "Ungültiger Komponententyp", 400
+
+    if request.method == "POST":
+        marke = request.form.get("marke")
+        modell = request.form.get("modell")
+        preis = request.form.get("preis")
+        anzahl = request.form.get("anzahl", 1)
+
+        # 1. In pc_komponenten einfügen (Inventar, noch keinem PC zugeordnet)
+        komp_id = db_write(
+            """
+            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
+            VALUES (%s, %s, %s, %s, %s, NULL)
+            """,
+            (typ, marke, modell, preis, anzahl),
+            return_id=True
+        )
+
+        # 2. In die spezifische Tabelle einfügen
+        if typ == "cpu":
+            frequenz = request.form.get("frequenz_ghz")
+            watt = request.form.get("watt")
+            db_write(
+                "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
+                (komp_id, frequenz, watt)
+            )
+
+        elif typ == "gpu":
+            vram = request.form.get("vram")
+            db_write(
+                "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
+                (komp_id, vram)
+            )
+
+        elif typ == "ram":
+            speicher = request.form.get("speichermenge_gb")
+            cl = request.form.get("cl_rating")
+            db_write(
+                "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
+                (komp_id, speicher, cl)
+            )
+
+        elif typ == "psu":
+            watt = request.form.get("watt")
+            db_write(
+                "INSERT INTO psu (id, watt) VALUES (%s, %s)",
+                (komp_id, watt)
+            )
+
+        elif typ == "ssd":
+            speicher = request.form.get("speichermenge_gb")
+            db_write(
+                "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)",
+                (komp_id, speicher)
+            )
+
+        elif typ in ["pc_case", "fans", "kuehler", "argb", "extensions", "mobo"]:
+            # Haben aktuell nur die ID als FK
+            table = typ
+            db_write(f"INSERT INTO {table} (id) VALUES (%s)", (komp_id,))
+
+        return redirect(url_for("component_new", typ=typ))
+
+    return render_template("component_new.html", typ=typ)
 
 
 

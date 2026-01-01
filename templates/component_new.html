@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Neue {{ typ|upper }} hinzufügen</h1>
+<h1>Neue {{ typ|upper }} zum Inventar hinzufügen</h1>
 
 <form method="POST" class="form-horizontal">
 
@@ -26,7 +26,74 @@
     </div>
   </div>
 
-  <button type="submit" class="btn btn-success">Speichern</button>
+  <div class="form-group">
+    <label class="col-sm-2 control-label">Anzahl</label>
+    <div class="col-sm-10">
+      <input type="number" name="anzahl" class="form-control" value="1" min="1">
+    </div>
+  </div>
+
+  {% if typ == "cpu" %}
+  <div class="form-group">
+    <label class="col-sm-2 control-label">Frequenz (GHz)</label>
+    <div class="col-sm-10">
+      <input type="number" step="0.1" name="frequenz_ghz" class="form-control">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="col-sm-2 control-label">Watt</label>
+    <div class="col-sm-10">
+      <input type="number" name="watt" class="form-control">
+    </div>
+  </div>
+
+  {% elif typ == "gpu" %}
+  <div class="form-group">
+    <label class="col-sm-2 control-label">VRAM (GB)</label>
+    <div class="col-sm-10">
+      <input type="number" name="vram" class="form-control">
+    </div>
+  </div>
+
+  {% elif typ == "ram" %}
+  <div class="form-group">
+    <label class="col-sm-2 control-label">Speicher (GB)</label>
+    <div class="col-sm-10">
+      <input type="number" name="speichermenge_gb" class="form-control">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="col-sm-2 control-label">CL-Rating</label>
+    <div class="col-sm-10">
+      <input type="text" name="cl_rating" class="form-control">
+    </div>
+  </div>
+
+  {% elif typ == "psu" %}
+  <div class="form-group">
+    <label class="col-sm-2 control-label">Watt</label>
+    <div class="col-sm-10">
+      <input type="number" name="watt" class="form-control">
+    </div>
+  </div>
+
+  {% elif typ == "ssd" %}
+  <div class="form-group">
+    <label class="col-sm-2 control-label">Speicher (GB)</label>
+    <div class="col-sm-10">
+      <input type="number" name="speichermenge_gb" class="form-control">
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="form-group">
+    <div class="col-sm-offset-2 col-sm-10">
+      <button type="submit" class="btn btn-success">Speichern</button>
+    </div>
+  </div>
+
 </form>
 
 {% endblock %}
