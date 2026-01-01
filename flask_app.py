@@ -172,7 +172,7 @@ def pc_new():
 @app.route("/pc/<int:pc_id>")
 @login_required
 def pc_detail(pc_id):
-    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), one=True)
+    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), single=True)
     if not pc:
         return "PC nicht gefunden", 404
     components = db_read("SELECT * FROM pc_komponenten WHERE pc_id=%s", (pc_id,))
@@ -222,5 +222,5 @@ def sell_pc(pc_id):
 
         return redirect(url_for("index"))
 
-    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), one=True)
+    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,), single=True)
     return render_template("sell_pc.html", pc=pc)
