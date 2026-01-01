@@ -136,6 +136,28 @@ def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
     return render_template("pc_list.html", pcs=pcs)
 
+@app.route("/components/new/<typ>", methods=["GET", "POST"])
+@login_required
+def component_new(typ):
+
+    if typ not in VALID_TYPES:
+        return "Ungültiger Komponententyp", 400
+
+    if request.method == "POST":
+        marke = request.form.get("marke")
+        modell = request.form.get("modell")
+        preis = request.form.get("preis")
+
+        # In die richtige Tabelle einfügen
+        db_write(
+            f"INSERT INTO {typ} (marke, modell, preis) VALUES (%s, %s, %s)",
+            (marke, modell, preis)
+        )
+
+        return redirect(url_for("component_new", typ=typ))
+
+    return render_template("component_new.html", typ=typ)
+
 
 @app.route("/pc/new", methods=["GET", "POST"])
 @login_required
