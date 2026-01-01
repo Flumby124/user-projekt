@@ -1,23 +1,30 @@
-{% extends "base.html" %}
-
+{{% extends "base.html" %}
 {% block content %}
-<h2>Neuen PC erstellen</h2>
 
-<form method="POST">
+<h1>Neuen PC erstellen</h1>
+
+<form method="POST" class="form-horizontal">
+
   <div class="form-group">
-    <label>Name des PCs</label>
-    <input type="text" name="name" class="form-control" required>
+    <label class="col-sm-2 control-label">PC Name</label>
+    <div class="col-sm-10">
+      <input type="text" name="name" class="form-control" placeholder="z.B. Gaming Beast 3000" required>
+    </div>
   </div>
 
   <div class="form-group">
-    <label>Status</label>
-    <select name="status" class="form-control">
-      <option value="gebaut">gebaut</option>
-      <option value="in Arbeit">in Arbeit</option>
-      <option value="verkauft">verkauft</option>
-    </select>
+    <label class="col-sm-2 control-label">Status</label>
+    <div class="col-sm-10">
+      <select name="status" class="form-control">
+        <option value="gebaut">gebaut</option>
+        <option value="in bau">in Bau</option>
+        <option value="geplant">geplant</option>
+      </select>
+    </div>
   </div>
 
-  <button class="btn btn-success">Erstellen</button>
+  <button type="submit" class="btn btn-primary">PC erstellen</button>
+
 </form>
+
 {% endblock %}

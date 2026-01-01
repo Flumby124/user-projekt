@@ -86,16 +86,17 @@
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown">Komponenten <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='cpu') }}">CPUs</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='gpu') }}">GPUs</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='ram') }}">RAM</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='ssd') }}">SSDs</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='psu') }}">Netzteile</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='pc_case') }}">Gehäuse</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='fans') }}">Lüfter</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='kuehler') }}">Kühler</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='argb') }}">ARGB</a></li>
-                <li><a href="{{ url_for('add_component_list', pc_id=0, typ='extensions') }}">Extensions</a></li>
+                <li><a href="{{ url_for('component_new', typ='cpu') }}">Neue CPU</a></li>
+                <li><a href="{{ url_for('component_new', typ='gpu') }}">Neue GPU</a></li>
+                <li><a href="{{ url_for('component_new', typ='ram') }}">Neuen RAM</a></li>
+                <li><a href="{{ url_for('component_new', typ='ssd') }}">Neue SSD</a></li>
+                <li><a href="{{ url_for('component_new', typ='psu') }}">Neues Netzteil</a></li>
+                <li><a href="{{ url_for('component_new', typ='pc_case') }}">Neues Gehäuse</a></li>
+                <li><a href="{{ url_for('component_new', typ='fans') }}">Neue Lüfter</a></li>
+                <li><a href="{{ url_for('component_new', typ='kuehler') }}">Neuer Kühler</a></li>
+                <li><a href="{{ url_for('component_new', typ='argb') }}">Neue ARGB‑Komponente</a></li>
+                <li><a href="{{ url_for('component_new', typ='extensions') }}">Neue Extension</a></li>
+
               </ul>
             </li>
 
