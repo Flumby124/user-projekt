@@ -15,98 +15,102 @@ CREATE TABLE todos (
 );
 */
 
+
 CREATE TABLE pc (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    status TEXT DEFAULT 'gebaut',
-    gesamtpreis REAL DEFAULT 0
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    status VARCHAR(50) DEFAULT 'gebaut',
+    gesamtpreis DECIMAL(10,2) DEFAULT 0
 );
 
+
 CREATE TABLE pc_komponenten (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    typ TEXT NOT NULL,            
-    marke TEXT,
-    modell TEXT,
-    preis REAL NOT NULL,
-    anzahl INTEGER DEFAULT 1,
-    pc_id INTEGER,                
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    typ VARCHAR(100) NOT NULL,
+    marke VARCHAR(255),
+    modell VARCHAR(255),
+    preis DECIMAL(10,2) NOT NULL,
+    anzahl INT DEFAULT 1,
+    pc_id INT,
     FOREIGN KEY (pc_id) REFERENCES pc(id)
 );
 
 
 CREATE TABLE cpu (
-    id INTEGER PRIMARY KEY,
-    frequenz_ghz REAL,
-    watt INTEGER,
+    id INT PRIMARY KEY,
+    frequenz_ghz DECIMAL(4,2),
+    watt INT,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
 
 CREATE TABLE gpu (
-    id INTEGER PRIMARY KEY,
-    vram INTEGER,
+    id INT PRIMARY KEY,
+    vram INT,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
 
 CREATE TABLE ram (
-    id INTEGER PRIMARY KEY,
-    speichermenge_gb INTEGER,
-    cl_rating TEXT,
+    id INT PRIMARY KEY,
+    speichermenge_gb INT,
+    cl_rating VARCHAR(50),
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
+
 
 CREATE TABLE mobo (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
+
 CREATE TABLE psu (
-    id INTEGER PRIMARY KEY,
-    watt INTEGER,
+    id INT PRIMARY KEY,
+    watt INT,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
 
 CREATE TABLE ssd (
-    id INTEGER PRIMARY KEY,
-    speichermenge_gb INTEGER,
+    id INT PRIMARY KEY,
+    speichermenge_gb INT,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
 
 CREATE TABLE pc_case (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
 
 CREATE TABLE fans (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
-
 CREATE TABLE kuehler (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
 CREATE TABLE argb (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
 
 CREATE TABLE extensions (
-    id INTEGER PRIMARY KEY,
+    id INT PRIMARY KEY,
     FOREIGN KEY (id) REFERENCES pc_komponenten(id)
 );
 
+
 CREATE TABLE sales (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    pc_id INTEGER NOT NULL,
-    verkaufspreis REAL NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pc_id INT NOT NULL,
+    verkaufspreis DECIMAL(10,2) NOT NULL,
     verkauft_am DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pc_id) REFERENCES pc(id)
 );
