@@ -173,7 +173,7 @@ def pc_detail(pc_id):
 
 print(">>> LOADING ROUTE: /components/new/<typ>")
 
-@app.route("/components/new/<typ>", methods=["GET", "POST"], endpoint="component_new_page")
+@app.route("/components/new/<typ>", methods=["GET", "POST"])
 @login_required
 def component_new(typ):
 
