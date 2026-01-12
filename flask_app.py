@@ -1,4 +1,4 @@
-print(">>> LOADING FLASK_APP")
+
 
 from flask import Flask, redirect, render_template, request, url_for
 from dotenv import load_dotenv
@@ -46,7 +46,7 @@ def is_valid_signature(x_hub_signature, data, private_key):
     mac = hmac.new(encoded_key, msg=data, digestmod=algorithm)
     return hmac.compare_digest(mac.hexdigest(), github_signature)
 
-print(">>> LOADING ROUTE: /update_server")
+
 @app.post('/update_server')
 def webhook():
     x_hub_signature = request.headers.get('X-Hub-Signature')
@@ -59,7 +59,7 @@ def webhook():
 
 
 
-print(">>> LOADING ROUTE: /login")
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -87,7 +87,7 @@ def login():
         footer_link_label="Registrieren"
     )
 
-print(">>> LOADING ROUTE: /register")
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     error = None
@@ -113,7 +113,7 @@ def register():
         footer_link_label="Einloggen"
     )
 
-print(">>> LOADING ROUTE: /logout")
+
 
 @app.route("/logout")
 @login_required
@@ -123,7 +123,6 @@ def logout():
 
 
 
-print(">>> LOADING ROUTE: /")
 
 @app.route("/")
 @login_required
@@ -139,7 +138,6 @@ def index():
 
     return render_template("dashboard.html", pcs=pcs, sales=sales)
 
-print(">>> LOADING ROUTE: /pcs")
 
 @app.route("/pcs")
 @login_required
@@ -147,7 +145,7 @@ def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
     return render_template("pc_list.html", pcs=pcs)
 
-print(">>> LOADING ROUTE: /pc/new")
+
 
 @app.route("/pc/new", methods=["GET", "POST"])
 @login_required
@@ -161,7 +159,7 @@ def pc_new():
 
     return render_template("pc_new.html")
 
-print(">>> LOADING ROUTE: /pc/<int:pc_id")
+
 
 @app.route("/pc/<int:pc_id>")
 @login_required
@@ -171,7 +169,7 @@ def pc_detail(pc_id):
     return render_template("pc_detail.html", pc=pc, komponenten=komponenten)
 
 
-print(">>> LOADING ROUTE: /components/new/<typ>")
+
 
 @app.route("/components/new/<typ>", methods=["GET", "POST"], endpoint="component_new_page")
 @login_required
@@ -183,7 +181,7 @@ def component_new(typ):
     if request.method == "POST":
         marke = request.form.get("marke")
         modell = request.form.get("modell")
-        preis = request.form.get("preis")
+        preis = float(request.form.get("preis", 0))
         anzahl = request.form.get("anzahl", 1)
 
       
@@ -292,4 +290,3 @@ def sell_pc(pc_id):
     pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,))
     return render_template("sell_pc.html", pc=pc)
 
-print(">>> FINISHED LOADING FLASK_APP")
