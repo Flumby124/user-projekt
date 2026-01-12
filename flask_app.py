@@ -172,8 +172,8 @@ def pc_detail(pc_id):
 @app.route("/components/new/<typ>", methods=["GET", "POST"])
 @login_required
 def component_new(typ):
-
-    if typ not in VALID_TYPES:
+    pass 
+    '''if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
     if request.method == "POST":
@@ -218,7 +218,7 @@ def component_new(typ):
 
     return render_template("component_new.html", typ=typ)
 
-
+'''
 
 @app.route("/pc/<int:pc_id>/add/<typ>")
 @login_required
