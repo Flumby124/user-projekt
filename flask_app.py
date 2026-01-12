@@ -171,7 +171,7 @@ def pc_detail(pc_id):
 
 
 
-@app.route("/components/new/<typ>", methods=["GET", "POST"], endpoint="component_new_page")
+@app.route("/components/new/<typ>", methods=["GET", "POST"])
 @login_required
 def component_new(typ):
 
@@ -191,12 +191,11 @@ def component_new(typ):
         """, (typ, marke, modell, preis, anzahl))
 
         
-        komp_id = db_read("SELECT LAST_INSERT_ID() AS id")[0]["id"]
 
         if typ == "cpu":
             db_write(
-                "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
-                (komp_id, request.form.get("frequenz_ghz"), request.form.get("watt"))
+                "INSERT INTO cpu (id,) VALUES (%s,)",
+                (komp_id)
             )
 
         elif typ == "gpu":
