@@ -179,7 +179,7 @@ def component_new(typ):
     if request.method == "POST":
         marke = request.form.get("marke")
         modell = request.form.get("modell")
-        preis = float(request.form.get("preis", 0))
+        preis = float(request.form.get("preis") or 0)
         anzahl = request.form.get("anzahl", 1)
 
         komp_id = db_write("""
