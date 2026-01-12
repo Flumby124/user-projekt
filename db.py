@@ -48,7 +48,9 @@ def db_write(sql, params=None):
         cur = conn.cursor()
         cur.execute(sql, params or ())
         conn.commit()
-        print("db_write OK:", sql, params)  # DEBUG
+        last_id = cur.lastrowid
+        print("db_write OK:", sql, params, "last_id:", last_id)  # DEBUG
+        return last_id
     finally:
         try:
             cur.close()
