@@ -1,5 +1,3 @@
-
-
 from flask import Flask, redirect, render_template, request, url_for
 from dotenv import load_dotenv
 import os
@@ -178,6 +176,7 @@ def component_new(typ):
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
+    
     if request.method == "POST":
         marke = request.form.get("marke")
         modell = request.form.get("modell")
@@ -188,11 +187,9 @@ def component_new(typ):
         komp_id = db_write("""
             INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
             VALUES (%s, %s, %s, %s, %s, NULL)
-            """, (typ, marke, modell, preis, anzahl))
+        """, (typ, marke, modell, preis, anzahl))
 
     
-            )
-
         if typ == "gpu":
             db_write(
                 "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
@@ -218,9 +215,11 @@ def component_new(typ):
             )
 
         else:
+            # Für pc_case, fans, kuehler, argb, extensions, mobo
             db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
 
         return redirect(url_for("component_new_page", typ=typ))
+
 
 
     return render_template("component_new.html", typ=typ)
