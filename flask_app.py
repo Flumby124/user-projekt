@@ -184,21 +184,16 @@ def component_new(typ):
         preis = float(request.form.get("preis", 0))
         anzahl = request.form.get("anzahl", 1)
 
-      
-        db_write("""
+    
+        komp_id = db_write("""
             INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
             VALUES (%s, %s, %s, %s, %s, NULL)
-        """, (typ, marke, modell, preis, anzahl))
+            """, (typ, marke, modell, preis, anzahl))
 
-        
-
-        if typ == "cpu":
-            db_write(
-                "INSERT INTO cpu (id,) VALUES (%s,)",
-                (komp_id)
+    
             )
 
-        elif typ == "gpu":
+        if typ == "gpu":
             db_write(
                 "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
                 (komp_id, request.form.get("vram"))
@@ -226,6 +221,7 @@ def component_new(typ):
             db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
 
         return redirect(url_for("component_new_page", typ=typ))
+
 
     return render_template("component_new.html", typ=typ)
 
