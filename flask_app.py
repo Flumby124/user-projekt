@@ -322,17 +322,17 @@ def delete_pc(pc_id):
 @app.route("/component/<int:item_id>/delete")
 @login_required
 def delete_component(item_id):
-    # Typ der Komponente abfragen
+    
     komp = db_read("SELECT typ FROM pc_komponenten WHERE id=%s", (item_id,))
     if not komp:
         return "Komponente nicht gefunden", 404
     typ = komp[0]["typ"]
 
-    # Spezielle Tabelle löschen (nur wenn nötig)
+    
     if typ in ["gpu", "ram", "psu", "ssd"]:
         db_write(f"DELETE FROM {typ} WHERE id=%s", (item_id,))
     
-    # Haupttabelle löschen
+    
     db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
     
     return redirect(url_for("component_new_page", typ=typ))
