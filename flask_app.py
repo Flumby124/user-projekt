@@ -224,7 +224,6 @@ def component_new(typ):
     return render_template("component_new.html", typ=typ)
 
 
-
 @app.route("/pc/<int:pc_id>/add/<typ>")
 @login_required
 def add_component_list(pc_id, typ):
@@ -232,17 +231,7 @@ def add_component_list(pc_id, typ):
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
-    join_map = {
-        "gpu": "LEFT JOIN gpu g ON g.id = k.id",
-        "ram": "LEFT JOIN ram r ON r.id = k.id",
-        "psu": "LEFT JOIN psu p ON p.id = k.id",
-        "ssd": "LEFT JOIN ssd s ON s.id = k.id",
-        "cpu": "LEFT JOIN cpu c ON c.id = k.id",
-    }
-
-    join_sql = join_map.get(typ, "")
-
-    items = db_read(f"""
+    items = db_read("""
         SELECT 
             k.*,
             g.vram,
@@ -251,8 +240,14 @@ def add_component_list(pc_id, typ):
             s.speichermenge_gb AS ssd_gb,
             c.frequenz_ghz, c.watt AS cpu_watt
         FROM pc_komponenten k
-        {join_sql}
-        WHERE k.typ=%s AND k.pc_id IS NULL
+        LEFT JOIN gpu g ON g.id = k.id
+        LEFT JOIN ram r ON r.id = k.id
+        LEFT JOIN psu p ON p.id = k.id
+        LEFT JOIN ssd s ON s.id = k.id
+        LEFT JOIN cpu c ON c.id = k.id
+        WHERE k.typ=%s
+          AND k.pc_id IS NULL
+          AND k.anzahl > 0
         ORDER BY k.preis ASC
     """, (typ,))
 
@@ -262,6 +257,7 @@ def add_component_list(pc_id, typ):
         typ=typ,
         pc_id=pc_id
     )
+
 
 @app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
 @login_required
