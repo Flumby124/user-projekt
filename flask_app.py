@@ -152,8 +152,13 @@ def pc_new():
         name = request.form["name"]
         status = request.form.get("status", "gebaut")
 
-        db_write("INSERT INTO pc (name, status) VALUES (%s, %s)", (name, status))
-        return redirect(url_for("pc_list"))
+        pc_id = db_write(
+            "INSERT INTO pc (name, status) VALUES (%s, %s)",
+            (name, status)
+        )
+
+        return redirect(url_for("add_component_list", pc_id=pc_id, typ="cpu"))
+
 
     return render_template("pc_new.html")
 
