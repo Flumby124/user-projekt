@@ -27,6 +27,13 @@
   {% endfor %}
 
 </div>
+<hr>
 
+<div class="text-center">
+  <a href="{{ url_for('pc_detail', pc_id=pc_id) }}"
+     class="btn btn-default">
+    Zurück zur PC-Übersicht
+  </a>
+</div>
 
 {% endblock %}
