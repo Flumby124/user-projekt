@@ -21,7 +21,7 @@
            class="btn btn-success btn-block">
           Hinzufügen
         </a>
-        
+        {% if not item.pc_id %}
         <a href="{{ url_for('delete_component', item_id=item.id) }}"
           class="btn btn-danger btn-block"
           onclick="return confirm('Bist du sicher, dass du diese Komponente komplett löschen willst?');">
