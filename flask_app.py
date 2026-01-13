@@ -275,6 +275,7 @@ def add_component(pc_id, typ, item_id):
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
+    # Original-Komponente auslesen
     komp = db_read("SELECT * FROM pc_komponenten WHERE id=%s", (item_id,))
     if not komp:
         return "Komponente nicht gefunden", 404
@@ -283,33 +284,57 @@ def add_component(pc_id, typ, item_id):
     preis = komp["preis"]
     anzahl = komp["anzahl"]
 
-    db_write("""
+    # Neue Komponente für den PC erstellen
+    new_komp_id = db_write("""
         INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
         VALUES (%s, %s, %s, %s, 1, %s)
     """, (komp["typ"], komp["marke"], komp["modell"], preis, pc_id))
 
+    # Typ-spezifische Daten kopieren
+    if typ in ["gpu", "ram", "psu", "ssd", "cpu"]:
+        typ_values = db_read(f"SELECT * FROM {typ} WHERE id=%s", (item_id,))
+        if typ_values:
+            typ_values = typ_values[0]
+
+            if typ == "gpu":
+                vram = int(typ_values["vram"]) if typ_values["vram"] else None
+                db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)", (new_komp_id, vram))
+
+            elif typ == "ram":
+                speicher = int(typ_values["speichermenge_gb"]) if typ_values["speichermenge_gb"] else None
+                cl_rating = typ_values["cl_rating"] or None
+                db_write("INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
+                         (new_komp_id, speicher, cl_rating))
+
+            elif typ == "psu":
+                watt = int(typ_values["watt"]) if typ_values["watt"] else None
+                db_write("INSERT INTO psu (id, watt) VALUES (%s, %s)", (new_komp_id, watt))
+
+            elif typ == "ssd":
+                gb = int(typ_values["speichermenge_gb"]) if typ_values["speichermenge_gb"] else None
+                db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)", (new_komp_id, gb))
+
+            elif typ == "cpu":
+                freq = float(typ_values["frequenz_ghz"]) if typ_values["frequenz_ghz"] else None
+                watt = int(typ_values["watt"]) if typ_values["watt"] else None
+                db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)", 
+                         (new_komp_id, freq, watt))
+
+    # Original-Komponente anpassen (Anzahl reduzieren oder löschen)
     if anzahl > 1:
-        db_write("""
-            UPDATE pc_komponenten
-            SET anzahl = anzahl - 1
-            WHERE id = %s
-        """, (item_id,))
+        db_write("UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s", (item_id,))
     else:
         db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
 
-    db_write("""
-        UPDATE pc
-        SET gesamtpreis = gesamtpreis + %s
-        WHERE id = %s
-    """, (preis, pc_id))
+    # Gesamtpreis updaten
+    db_write("UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s", (preis, pc_id))
 
+    # Zum nächsten Typ oder PC-Detail weiterleiten
     try:
         next_typ = COMPONENT_ORDER[COMPONENT_ORDER.index(typ) + 1]
         return redirect(url_for("add_component_list", pc_id=pc_id, typ=next_typ))
     except (ValueError, IndexError):
         return redirect(url_for("pc_detail", pc_id=pc_id))
-
-
 
 
 @app.route("/pc/<int:pc_id>/sell", methods=["GET", "POST"])
