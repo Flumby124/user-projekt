@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Neue {{ typ|upper }} zum Inventar hinzufügen</h1>
+<h1>Neue {{ typ.replace('_', ' ')|title }} zum Inventar hinzufügen</h1>
 
 <form method="POST" class="form-horizontal">
 
