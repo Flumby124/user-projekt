@@ -119,7 +119,7 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
-
+COMPONENT_ORDER = ["cpu", "gpu", "ram", "ssd", "psu", "pc_case", "fans", "kuehler", "argb", "extensions"]
 
 
 @app.route("/")
@@ -264,7 +264,12 @@ def add_component(pc_id, typ, item_id):
         WHERE id = %s
     """, (preis, pc_id))
 
-    return redirect(url_for("pc_detail", pc_id=pc_id))
+    try:
+        next_typ = COMPONENT_ORDER[COMPONENT_ORDER.index(typ) + 1]
+        return redirect(url_for("add_component_list", pc_id=pc_id, typ=next_typ))
+    except (ValueError, IndexError):
+        return redirect(url_for("pc_detail", pc_id=pc_id))
+
 
 
 
