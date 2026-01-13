@@ -5,15 +5,6 @@ CREATE TABLE users (
     password VARCHAR(250) NOT NULL
 );
 
-/*
-CREATE TABLE todos (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    content VARCHAR(100),
-    due DATETIME,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-*/
 
 
 CREATE TABLE pc (
@@ -21,6 +12,9 @@ CREATE TABLE pc (
     name VARCHAR(255) NOT NULL,
     status VARCHAR(50) DEFAULT 'gebaut',
     gesamtpreis DECIMAL(10,2) DEFAULT 0
+    ALTER TABLE pc
+    ADD COLUMN user_id INT NOT NULL,
+    ADD FOREIGN KEY (user_id) REFERENCES users(id);
 );
 
 
@@ -33,6 +27,10 @@ CREATE TABLE pc_komponenten (
     anzahl INT DEFAULT 1,
     pc_id INT,
     FOREIGN KEY (pc_id) REFERENCES pc(id)
+    ALTER TABLE pc_komponenten
+    ADD COLUMN user_id INT,
+    ADD FOREIGN KEY (user_id) REFERENCES users(id);
+
 );
 
 

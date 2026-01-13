@@ -140,7 +140,10 @@ def index():
 @app.route("/pcs")
 @login_required
 def pc_list():
-    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
+    pcs = db_read(
+        "SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
+        (current_user.id,)
+    )
     return render_template("pc_list.html", pcs=pcs)
 
 
@@ -152,13 +155,13 @@ def pc_new():
         name = request.form["name"]
         status = request.form.get("status", "gebaut")
 
+        # Neuer PC gehört dem aktuellen User
         pc_id = db_write(
-            "INSERT INTO pc (name, status) VALUES (%s, %s)",
-            (name, status)
+            "INSERT INTO pc (name, status, user_id) VALUES (%s, %s, %s)",
+            (name, status, current_user.id)
         )
 
         return redirect(url_for("add_component_list", pc_id=pc_id, typ="cpu"))
-
 
     return render_template("pc_new.html")
 
@@ -167,17 +170,21 @@ def pc_new():
 @app.route("/pc/<int:pc_id>")
 @login_required
 def pc_detail(pc_id):
-    pc = db_read("SELECT * FROM pc WHERE id=%s", (pc_id,))
-    komponenten = db_read("SELECT * FROM pc_komponenten WHERE pc_id=%s", (pc_id,))
+    pc = db_read(
+        "SELECT * FROM pc WHERE id=%s AND user_id=%s",
+        (pc_id, current_user.id)
+    )
+    komponenten = db_read(
+        "SELECT * FROM pc_komponenten WHERE pc_id=%s AND user_id=%s",
+        (pc_id, current_user.id)
+    )
     return render_template("pc_detail.html", pc=pc, komponenten=komponenten)
-
 
 
 
 @app.route("/components/new/<typ>", methods=["GET", "POST"])
 @login_required
 def component_new(typ):
-     
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
@@ -187,35 +194,32 @@ def component_new(typ):
         preis = float(request.form.get("preis") or 0)
         anzahl = request.form.get("anzahl", 1)
 
+        # user_id speichern
         komp_id = db_write("""
-            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
-            VALUES (%s, %s, %s, %s, %s, NULL)
-        """, (typ, marke, modell, preis, anzahl))
+            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id, user_id)
+            VALUES (%s, %s, %s, %s, %s, NULL, %s)
+        """, (typ, marke, modell, preis, anzahl, current_user.id))
 
         if typ == "gpu":
             db_write(
                 "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
                 (komp_id, request.form.get("vram"))
             )
-
         elif typ == "ram":
             db_write(
                 "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
                 (komp_id, request.form.get("speichermenge_gb"), request.form.get("cl_rating"))
             )
-
         elif typ == "psu":
             db_write(
                 "INSERT INTO psu (id, watt) VALUES (%s, %s)",
                 (komp_id, request.form.get("watt"))
             )
-
         elif typ == "ssd":
             db_write(
                 "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)",
                 (komp_id, request.form.get("speichermenge_gb"))
             )
-
         else:
             db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
 
@@ -227,7 +231,6 @@ def component_new(typ):
 @app.route("/pc/<int:pc_id>/add/<typ>")
 @login_required
 def add_component_list(pc_id, typ):
-
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
@@ -237,19 +240,15 @@ def add_component_list(pc_id, typ):
     if typ == "gpu":
         select_extra = ", g.vram"
         join_sql = "LEFT JOIN gpu g ON g.id = k.id"
-
     elif typ == "ram":
         select_extra = ", r.speichermenge_gb, r.cl_rating"
         join_sql = "LEFT JOIN ram r ON r.id = k.id"
-
     elif typ == "psu":
         select_extra = ", p.watt"
         join_sql = "LEFT JOIN psu p ON p.id = k.id"
-
     elif typ == "ssd":
         select_extra = ", s.speichermenge_gb AS ssd_gb"
         join_sql = "LEFT JOIN ssd s ON s.id = k.id"
-
     elif typ == "cpu":
         select_extra = ", c.frequenz_ghz, c.watt AS cpu_watt"
         join_sql = "LEFT JOIN cpu c ON c.id = k.id"
@@ -258,9 +257,9 @@ def add_component_list(pc_id, typ):
         SELECT k.* {select_extra}
         FROM pc_komponenten k
         {join_sql}
-        WHERE k.typ=%s AND k.pc_id IS NULL
+        WHERE k.typ=%s AND k.pc_id IS NULL AND k.user_id=%s
         ORDER BY k.preis ASC
-    """, (typ,))
+    """, (typ, current_user.id))
 
     return render_template(
         "component_list.html",
@@ -362,7 +361,7 @@ def delete_pc(pc_id):
 @login_required
 def delete_component(item_id):
     komp = db_read("SELECT typ, pc_id FROM pc_komponenten WHERE id=%s", (item_id,))
-    if not komp:
+    if not komp or komp[0]["user_id"] != current_user.id:
         return "Komponente nicht gefunden", 404
 
     typ = komp[0]["typ"]
