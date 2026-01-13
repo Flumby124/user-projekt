@@ -3,11 +3,21 @@
 
 <h1>Neue {{ typ.replace('_', ' ')|title }} zum Inventar hinzufügen</h1>
 
+<!-- 🔍 Suchleiste -->
+<input
+  type="text"
+  id="searchInput"
+  class="form-control"
+  placeholder="Suchen nach Marke oder Modell..."
+  style="margin-bottom: 20px;"
+  onkeyup="filterComponents()"
+>
 
 <div class="row">
 
   {% for item in items %}
-  <div class="col-sm-4">
+  <div class="col-sm-4 component-card"
+       data-search="{{ (item.marke ~ ' ' ~ item.modell)|lower }}">
     <div class="panel panel-default">
       <div class="panel-heading">
         <strong>{{ item.marke }} {{ item.modell }}</strong>
@@ -22,19 +32,21 @@
            class="btn btn-success btn-block">
           Hinzufügen
         </a>
+
         {% if not item.pc_id %}
         <a href="{{ url_for('delete_component', item_id=item.id) }}"
-          class="btn btn-danger btn-block"
-          onclick="return confirm('Bist du sicher, dass du diese Komponente komplett löschen willst?');">
+           class="btn btn-danger btn-block"
+           onclick="return confirm('Bist du sicher, dass du diese Komponente komplett löschen willst?');">
           Löschen
-        {% endif %}
         </a>
+        {% endif %}
       </div>
     </div>
   </div>
   {% endfor %}
 
 </div>
+
 <hr>
 
 <div class="text-center">
@@ -43,5 +55,22 @@
     Zurück zur PC-Übersicht
   </a>
 </div>
+
+<!-- 🧠 Live-Suche -->
+<script>
+function filterComponents() {
+  const input = document.getElementById("searchInput").value.toLowerCase();
+  const cards = document.getElementsByClassName("component-card");
+
+  for (let i = 0; i < cards.length; i++) {
+    const text = cards[i].getAttribute("data-search");
+    if (text.includes(input)) {
+      cards[i].style.display = "";
+    } else {
+      cards[i].style.display = "none";
+    }
+  }
+}
+</script>
 
 {% endblock %}
