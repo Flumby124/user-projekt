@@ -231,23 +231,34 @@ def add_component_list(pc_id, typ):
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
-    items = db_read("""
-        SELECT 
-            k.*,
-            g.vram,
-            r.speichermenge_gb, r.cl_rating,
-            p.watt,
-            s.speichermenge_gb AS ssd_gb,
-            c.frequenz_ghz, c.watt AS cpu_watt
+    select_extra = ""
+    join_sql = ""
+
+    if typ == "gpu":
+        select_extra = ", g.vram"
+        join_sql = "LEFT JOIN gpu g ON g.id = k.id"
+
+    elif typ == "ram":
+        select_extra = ", r.speichermenge_gb, r.cl_rating"
+        join_sql = "LEFT JOIN ram r ON r.id = k.id"
+
+    elif typ == "psu":
+        select_extra = ", p.watt"
+        join_sql = "LEFT JOIN psu p ON p.id = k.id"
+
+    elif typ == "ssd":
+        select_extra = ", s.speichermenge_gb AS ssd_gb"
+        join_sql = "LEFT JOIN ssd s ON s.id = k.id"
+
+    elif typ == "cpu":
+        select_extra = ", c.frequenz_ghz, c.watt AS cpu_watt"
+        join_sql = "LEFT JOIN cpu c ON c.id = k.id"
+
+    items = db_read(f"""
+        SELECT k.* {select_extra}
         FROM pc_komponenten k
-        LEFT JOIN gpu g ON g.id = k.id
-        LEFT JOIN ram r ON r.id = k.id
-        LEFT JOIN psu p ON p.id = k.id
-        LEFT JOIN ssd s ON s.id = k.id
-        LEFT JOIN cpu c ON c.id = k.id
-        WHERE k.typ=%s
-          AND k.pc_id IS NULL
-          AND k.anzahl > 0
+        {join_sql}
+        WHERE k.typ=%s AND k.pc_id IS NULL
         ORDER BY k.preis ASC
     """, (typ,))
 
