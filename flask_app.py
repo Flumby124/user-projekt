@@ -340,4 +340,4 @@ def delete_component(item_id):
     # Haupttabelle löschen
     db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
 
-    return redirect(url_for("add_component_list", typ=typ))
+    return redirect(url_for("add_component", typ=typ))
