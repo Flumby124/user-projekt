@@ -33,9 +33,16 @@
   </tr>
 
   {% for k in komponenten %}
+  
   <tr>
     <td>{{ k.typ }}</td>
     <td>{{ k.preis }} CHF</td>
+    <td>
+        <a href="{{ url_for('remove_component', pc_id=pc[0].id, item_id=k.id) }}" 
+           class="btn btn-warning btn-sm">
+           Entfernen
+        </a>
+    </td>
   </tr>
   {% endfor %}
 </table>
