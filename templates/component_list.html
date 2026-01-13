@@ -27,6 +27,27 @@
         {% if item.preis %}
         <p><strong>{{ item.preis }} CHF</strong></p>
         {% endif %}
+        <p>Anzahl verfügbar: <strong>{{ item.anzahl }}</strong></p>
+
+        {% if typ == "gpu" and item.vram %}
+        <p>VRAM: {{ item.vram }} GB</p>
+        {% endif %}
+
+        {% if typ == "ram" and item.speichermenge_gb %}
+        <p>RAM: {{ item.speichermenge_gb }} GB · CL {{ item.cl_rating }}</p>
+        {% endif %}
+
+        {% if typ == "psu" and item.watt %}
+        <p>Leistung: {{ item.watt }} W</p>
+        {% endif %}
+
+        {% if typ == "ssd" and item.ssd_gb %}
+        <p>Speicher: {{ item.ssd_gb }} GB</p>
+        {% endif %}
+
+        {% if typ == "cpu" and item.frequenz_ghz %}
+        <p>Takt: {{ item.frequenz_ghz }} GHz · {{ item.cpu_watt }} W</p>
+        {% endif %}
 
         <a href="{{ url_for('add_component', pc_id=pc_id, typ=typ, item_id=item.id) }}"
            class="btn btn-success btn-block">

@@ -232,9 +232,36 @@ def add_component_list(pc_id, typ):
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
-    items = db_read("SELECT * FROM pc_komponenten WHERE typ=%s AND pc_id IS NULL", (typ,))
-    return render_template("component_list.html", items=items, typ=typ, pc_id=pc_id)
+    join_map = {
+        "gpu": "LEFT JOIN gpu g ON g.id = k.id",
+        "ram": "LEFT JOIN ram r ON r.id = k.id",
+        "psu": "LEFT JOIN psu p ON p.id = k.id",
+        "ssd": "LEFT JOIN ssd s ON s.id = k.id",
+        "cpu": "LEFT JOIN cpu c ON c.id = k.id",
+    }
 
+    join_sql = join_map.get(typ, "")
+
+    items = db_read(f"""
+        SELECT 
+            k.*,
+            g.vram,
+            r.speichermenge_gb, r.cl_rating,
+            p.watt,
+            s.speichermenge_gb AS ssd_gb,
+            c.frequenz_ghz, c.watt AS cpu_watt
+        FROM pc_komponenten k
+        {join_sql}
+        WHERE k.typ=%s AND k.pc_id IS NULL
+        ORDER BY k.preis ASC
+    """, (typ,))
+
+    return render_template(
+        "component_list.html",
+        items=items,
+        typ=typ,
+        pc_id=pc_id
+    )
 
 @app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
 @login_required
