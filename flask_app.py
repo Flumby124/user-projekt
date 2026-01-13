@@ -239,25 +239,31 @@ def add_component_list(pc_id, typ):
 @app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
 @login_required
 def add_component(pc_id, typ, item_id):
-
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
-    
-    preis = db_read("SELECT preis FROM pc_komponenten WHERE id=%s", (item_id,))
-    if not preis:
+    komp = db_read("SELECT * FROM pc_komponenten WHERE id=%s", (item_id,))
+    if not komp:
         return "Komponente nicht gefunden", 404
 
-    preis = preis[0]["preis"]
+    komp = komp[0]
+    preis = komp["preis"]
+    anzahl = komp["anzahl"]
 
-  
     db_write("""
-        UPDATE pc_komponenten
-        SET pc_id = %s
-        WHERE id = %s
-    """, (pc_id, item_id))
+        INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id)
+        VALUES (%s, %s, %s, %s, 1, %s)
+    """, (komp["typ"], komp["marke"], komp["modell"], preis, pc_id))
 
-  
+    if anzahl > 1:
+        db_write("""
+            UPDATE pc_komponenten
+            SET anzahl = anzahl - 1
+            WHERE id = %s
+        """, (item_id,))
+    else:
+        db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
+
     db_write("""
         UPDATE pc
         SET gesamtpreis = gesamtpreis + %s
@@ -269,7 +275,6 @@ def add_component(pc_id, typ, item_id):
         return redirect(url_for("add_component_list", pc_id=pc_id, typ=next_typ))
     except (ValueError, IndexError):
         return redirect(url_for("pc_detail", pc_id=pc_id))
-
 
 
 
