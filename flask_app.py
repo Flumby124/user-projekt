@@ -292,18 +292,47 @@ def sell_pc(pc_id):
 @app.route("/pc/<int:pc_id>/remove/<int:item_id>")
 @login_required
 def remove_component(pc_id, item_id):
-    # Preis der Komponente abrufen
+    
     preis = db_read("SELECT preis FROM pc_komponenten WHERE id=%s", (item_id,))
     if not preis:
         return "Komponente nicht gefunden", 404
     preis = preis[0]["preis"]
 
-    # Komponente vom PC trennen
+
     db_write("UPDATE pc_komponenten SET pc_id=NULL WHERE id=%s", (item_id,))
 
-    # Gesamtpreis aktualisieren
     db_write("UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s", (preis, pc_id))
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
 
+@app.route("/pc/<int:pc_id>/delete")
+@login_required
+def delete_pc(pc_id):
+    
+    db_write("UPDATE pc_komponenten SET pc_id=NULL WHERE pc_id=%s", (pc_id,))
+    
+    
+    db_write("DELETE FROM sales WHERE pc_id=%s", (pc_id,))
+    
+    
+    db_write("DELETE FROM pc WHERE id=%s", (pc_id,))
+    
+    return redirect(url_for("pc_list"))
 
+@app.route("/component/<int:item_id>/delete")
+@login_required
+def delete_component(item_id):
+    # Typ der Komponente abfragen
+    komp = db_read("SELECT typ FROM pc_komponenten WHERE id=%s", (item_id,))
+    if not komp:
+        return "Komponente nicht gefunden", 404
+    typ = komp[0]["typ"]
+
+    # Spezielle Tabelle löschen (nur wenn nötig)
+    if typ in ["gpu", "ram", "psu", "ssd"]:
+        db_write(f"DELETE FROM {typ} WHERE id=%s", (item_id,))
+    
+    # Haupttabelle löschen
+    db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
+    
+    return redirect(url_for("component_new_page", typ=typ))

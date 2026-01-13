@@ -18,7 +18,16 @@
         <td>{{ pc.name }}</td>
         <td>{{ pc.status }}</td>
         <td>{{ pc.gesamtpreis }} CHF</td>
-        <td><a href="{{ url_for('pc_detail', pc_id=pc.id) }}">Öffnen</a></td>
+        <td>
+            <a href="{{ url_for('pc_detail', pc_id=pc.id) }}">Öffnen</a>
+
+            <a href="{{ url_for('delete_pc', pc_id=pc.id) }}" 
+                class="btn btn-danger"
+                onclick="return confirm('Bist du sicher, dass du diesen PC löschen willst?');">
+                Löschen
+            </a>
+        </td>
+
     </tr>
     {% endfor %}
 </table>
