@@ -329,15 +329,16 @@ def delete_component(item_id):
     typ = komp[0]["typ"]
     pc_id = komp[0]["pc_id"]
 
-    # Nur löschen, wenn Komponente keinem PC zugeordnet ist
+    
     if pc_id is not None:
         return "Komponente ist einem PC zugeordnet! Entferne sie zuerst vom PC.", 400
 
-    # Typ-spezifische Tabelle löschen, nur ein Eintrag
+    
     if typ in ["gpu", "ram", "psu", "ssd", "cpu", "mobo", "pc_case", "fans", "kuehler", "argb", "extensions"]:
         db_write(f"DELETE FROM {typ} WHERE id=%s", (item_id,))
 
-    # Haupttabelle löschen
+    
     db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
 
-    return redirect(url_for("add_component", typ=typ))
+    return redirect(request.referrer or url_for("component_new", typ=typ))
+
