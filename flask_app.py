@@ -245,46 +245,56 @@ def component_new(typ):
 
     return render_template("component_new.html", typ=typ)
 
-@app.route("/pc/<int:pc_id>/add/<typ>")
+@app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>", methods=["POST"])
 @login_required
-def add_component_list(pc_id, typ):
+def add_component(pc_id, typ, item_id):
     if typ not in VALID_TYPES:
         return "Ungültiger Komponententyp", 400
 
-    select_extra = ""
-    join_sql = ""
+    # Anzahl, die hinzugefügt werden soll
+    anzahl = int(request.form.get("anzahl", 1))
 
-    if typ == "gpu":
-        select_extra = ", g.vram"
-        join_sql = "LEFT JOIN gpu g ON g.id = k.id"
-    elif typ == "ram":
-        select_extra = ", r.speichermenge_gb, r.cl_rating"
-        join_sql = "LEFT JOIN ram r ON r.id = k.id"
-    elif typ == "psu":
-        select_extra = ", p.watt"
-        join_sql = "LEFT JOIN psu p ON p.id = k.id"
-    elif typ == "ssd":
-        select_extra = ", s.speichermenge_gb AS ssd_gb"
-        join_sql = "LEFT JOIN ssd s ON s.id = k.id"
-    elif typ == "cpu":
-        select_extra = ", c.frequenz_ghz, c.watt AS cpu_watt"
-        join_sql = "LEFT JOIN cpu c ON c.id = k.id"
+    # Originalteil aus dem Inventar
+    komp = db_read("SELECT * FROM pc_komponenten WHERE id=%s AND user_id=%s", (item_id, current_user.id))
+    if not komp:
+        return "Komponente nicht gefunden", 404
+    komp = komp[0]
+    preis = komp["preis"]
 
-    items = db_read(f"""
-        SELECT k.* {select_extra}
-        FROM pc_komponenten k
-        {join_sql}
-        WHERE k.typ=%s AND k.pc_id IS NULL AND k.user_id=%s
-        ORDER BY k.preis ASC
-    """, (typ, current_user.id))
+    # Erstelle so viele neue Einträge, wie angegeben
+    for _ in range(anzahl):
+        new_id = db_write("""
+            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id, user_id)
+            VALUES (%s, %s, %s, %s, 1, %s, %s)
+        """, (komp["typ"], komp["marke"], komp["modell"], preis, pc_id, current_user.id))
 
-    return render_template(
-        "component_list.html",
-        items=items,
-        typ=typ,
-        pc_id=pc_id
-    )
+        # Typ-spezifische Tabellen kopieren
+        if typ in ["gpu", "ram", "psu", "ssd", "cpu"]:
+            typ_values = db_read(f"SELECT * FROM {typ} WHERE id=%s", (item_id,))
+            if typ_values:
+                typ_values = typ_values[0]
+                if typ == "gpu":
+                    db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)", (new_id, typ_values["vram"]))
+                elif typ == "ram":
+                    db_write(
+                        "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
+                        (new_id, typ_values["speichermenge_gb"], typ_values["cl_rating"])
+                    )
+                elif typ == "psu":
+                    db_write("INSERT INTO psu (id, watt) VALUES (%s, %s)", (new_id, typ_values["watt"]))
+                elif typ == "ssd":
+                    db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)", (new_id, typ_values["speichermenge_gb"]))
+                elif typ == "cpu":
+                    db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
+                             (new_id, typ_values["frequenz_ghz"], typ_values["watt"]))
 
+    # Inventar-Anzahl anpassen
+    db_write("UPDATE pc_komponenten SET anzahl = anzahl - %s WHERE id = %s", (anzahl, item_id))
+
+    # Gesamtpreis aktualisieren
+    db_write("UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s", (preis * anzahl, pc_id))
+
+    return redirect(url_for("add_component_list", pc_id=pc_id, typ=typ))
 
 @app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
 @login_required

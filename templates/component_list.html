@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Neue {{ typ.replace('_', ' ')|title }} zum Inventar hinzufügen</h1>
+<h1>Neue {{ typ.replace('_', ' ')|title }} zum PC hinzufügen</h1>
 
 <!-- 🔍 Suchleiste -->
 <input
@@ -14,7 +14,6 @@
 >
 
 <div class="row">
-
   {% for item in items %}
   <div class="col-sm-4 component-card"
        data-search="{{ (item.marke ~ ' ' ~ item.modell)|lower }}">
@@ -48,10 +47,14 @@
         <p>Takt: {{ item.frequenz_ghz }} GHz · {{ item.cpu_watt }} W</p>
         {% endif %}
 
-        <a href="{{ url_for('add_component', pc_id=pc_id, typ=typ, item_id=item.id) }}"
-           class="btn btn-success btn-block">
-          Hinzufügen
-        </a>
+        <!-- Formular zum Hinzufügen mit Anzahl -->
+        <form action="{{ url_for('add_component', pc_id=pc_id, typ=typ, item_id=item.id) }}" method="post">
+          <div class="form-group">
+            <label for="anzahl-{{ item.id }}">Anzahl hinzufügen:</label>
+            <input type="number" name="anzahl" id="anzahl-{{ item.id }}" value="1" min="1" max="{{ item.anzahl }}" class="form-control">
+          </div>
+          <button type="submit" class="btn btn-success btn-block">Hinzufügen</button>
+        </form>
 
         {% if not item.pc_id %}
         <a href="{{ url_for('delete_component', item_id=item.id) }}"
@@ -64,7 +67,6 @@
     </div>
   </div>
   {% endfor %}
-
 </div>
 
 <hr>
@@ -76,7 +78,6 @@
   </a>
 </div>
 
-<!-- 🧠 Live-Suche -->
 <script>
 function filterComponents() {
   const input = document.getElementById("searchInput").value.toLowerCase();
@@ -84,11 +85,7 @@ function filterComponents() {
 
   for (let i = 0; i < cards.length; i++) {
     const text = cards[i].getAttribute("data-search");
-    if (text.includes(input)) {
-      cards[i].style.display = "";
-    } else {
-      cards[i].style.display = "none";
-    }
+    cards[i].style.display = text.includes(input) ? "" : "none";
   }
 }
 </script>
