@@ -192,36 +192,58 @@ def component_new(typ):
         marke = request.form.get("marke")
         modell = request.form.get("modell")
         preis = float(request.form.get("preis") or 0)
-        anzahl = int(request.form.get("anzahl", 1))  
+        anzahl = int(request.form.get("anzahl", 1))
 
         for _ in range(anzahl):
             komp_id = db_write("""
                 INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id, user_id)
                 VALUES (%s, %s, %s, %s, 1, NULL, %s)
-            """, (typ, marke, modell, preis, current_user.idcurrent_user.id))
+            """, (typ, marke, modell, preis, current_user.id))
 
-            
             if typ == "gpu":
-                db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)", (komp_id, request.form.get("vram")))
+                db_write(
+                    "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
+                    (komp_id, request.form.get("vram"))
+                )
+
             elif typ == "ram":
                 db_write(
                     "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
-                    (komp_id, request.form.get("speichermenge_gb"), request.form.get("cl_rating"))
+                    (
+                        komp_id,
+                        request.form.get("speichermenge_gb"),
+                        request.form.get("cl_rating")
+                    )
                 )
+
             elif typ == "psu":
-                db_write("INSERT INTO psu (id, watt) VALUES (%s, %s)", (komp_id, request.form.get("watt")))
+                db_write(
+                    "INSERT INTO psu (id, watt) VALUES (%s, %s)",
+                    (komp_id, request.form.get("watt"))
+                )
+
             elif typ == "ssd":
-                db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)", (komp_id, request.form.get("speichermenge_gb")))
+                db_write(
+                    "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)",
+                    (komp_id, request.form.get("speichermenge_gb"))
+                )
+
             elif typ == "cpu":
-                db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
-                         (komp_id, request.form.get("frequenz_ghz"), request.form.get("watt")))
+                db_write(
+                    "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
+                    (
+                        komp_id,
+                        request.form.get("frequenz_ghz"),
+                        request.form.get("watt")
+                    )
+                )
+
             else:
                 db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
 
         return redirect(url_for("component_new", typ=typ))
 
     return render_template("component_new.html", typ=typ)
-
 
 @app.route("/pc/<int:pc_id>/add/<typ>")
 @login_required
