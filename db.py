@@ -43,20 +43,12 @@ def db_read(sql, params=None, single=False):
 
 
 def db_write(sql, params=None):
-    conn = get_conn()
-    try:
-        cur = conn.cursor()
-        cur.execute(sql, params or ())
-        conn.commit()
-        last_id = cur.lastrowid
-        print("db_write OK:", sql, params, "last_id:", last_id)  # DEBUG
-        return last_id
-    finally:
-        try:
-            cur.close()
-        except:
-            pass
-        conn.close()
+    cnx = get_connection()
+    cursor = cnx.cursor(dictionary=True)
+    cursor.execute(sql, params or ())
+    cnx.commit()
+    return cursor.lastrowid  # <--- gibt ID zurück
+
 
 import mysql.connector
 
