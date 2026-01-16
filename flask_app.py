@@ -154,7 +154,7 @@ def pc_new():
             (name, status, current_user.id)
         )
 
-        return redirect(url_for("add_component_list", pc_id=pc_id, typ="cpu"))
+        return redirect(url_for("component_new", pc_id=pc_id, typ="cpu"))
 
     return render_template("pc_new.html")
 
