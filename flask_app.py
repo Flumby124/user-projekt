@@ -227,32 +227,34 @@ def component_new(typ):
 @login_required
 def add_component(pc_id, item_id):
 
-    # 1️⃣ Sicherheitschecks
-    pc = db_read(
-        "SELECT id FROM pc WHERE id=%s AND user_id=%s",
-        (pc_id, current_user.id)
-    )
-    if not pc:
-        return "PC nicht gefunden", 404
-
-    komp = db_read("""
-        SELECT * FROM pc_komponenten
-        WHERE id=%s AND user_id=%s AND pc_id IS NULL AND anzahl > 0
-    """, (item_id, current_user.id))
-
-    if not komp:
-        return "Teil nicht verfügbar", 400
-
-    komp = komp[0]
-    typ = komp["typ"]
-    preis = komp["preis"]
+    conn = get_connection()
+    cur = conn.cursor(dictionary=True)
 
     try:
-        # 🔒 TRANSAKTION START
-        db_write("START TRANSACTION")
+        # 1️⃣ PC prüfen
+        cur.execute(
+            "SELECT id FROM pc WHERE id=%s AND user_id=%s",
+            (pc_id, current_user.id)
+        )
+        if not cur.fetchone():
+            return "PC nicht gefunden", 404
 
-        # 2️⃣ Kopie direkt als PC-Teil anlegen
-        new_id = db_write("""
+        # 2️⃣ Inventar prüfen
+        cur.execute("""
+            SELECT * FROM pc_komponenten
+            WHERE id=%s AND user_id=%s AND pc_id IS NULL AND anzahl > 0
+        """, (item_id, current_user.id))
+        komp = cur.fetchone()
+
+        if not komp:
+            return "Teil nicht verfügbar", 400
+
+        typ = komp["typ"]
+        preis = komp["preis"]
+
+        # 🔒 TRANSAKTION
+        # 3️⃣ Kopie anlegen
+        cur.execute("""
             INSERT INTO pc_komponenten
             (typ, marke, modell, preis, anzahl, pc_id, user_id)
             VALUES (%s,%s,%s,%s,1,%s,%s)
@@ -264,57 +266,70 @@ def add_component(pc_id, item_id):
             pc_id,
             current_user.id
         ))
+        new_id = cur.lastrowid
 
-        # 3️⃣ Detaildaten explizit kopieren
+        # 4️⃣ Detaildaten kopieren
         if typ == "gpu":
-            d = db_read("SELECT vram FROM gpu WHERE id=%s", (item_id,))
-            db_write("INSERT INTO gpu (id, vram) VALUES (%s,%s)", (new_id, d[0]["vram"]))
+            cur.execute("SELECT vram FROM gpu WHERE id=%s", (item_id,))
+            d = cur.fetchone()
+            cur.execute("INSERT INTO gpu (id, vram) VALUES (%s,%s)", (new_id, d["vram"]))
 
         elif typ == "ram":
-            d = db_read("SELECT speichermenge_gb, cl_rating FROM ram WHERE id=%s", (item_id,))
-            db_write(
+            cur.execute("SELECT speichermenge_gb, cl_rating FROM ram WHERE id=%s", (item_id,))
+            d = cur.fetchone()
+            cur.execute(
                 "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s,%s,%s)",
-                (new_id, d[0]["speichermenge_gb"], d[0]["cl_rating"])
+                (new_id, d["speichermenge_gb"], d["cl_rating"])
             )
 
         elif typ == "psu":
-            d = db_read("SELECT watt FROM psu WHERE id=%s", (item_id,))
-            db_write("INSERT INTO psu (id, watt) VALUES (%s,%s)", (new_id, d[0]["watt"]))
+            cur.execute("SELECT watt FROM psu WHERE id=%s", (item_id,))
+            d = cur.fetchone()
+            cur.execute("INSERT INTO psu (id, watt) VALUES (%s,%s)", (new_id, d["watt"]))
 
         elif typ == "ssd":
-            d = db_read("SELECT speichermenge_gb FROM ssd WHERE id=%s", (item_id,))
-            db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)", (new_id, d[0]["speichermenge_gb"]))
+            cur.execute("SELECT speichermenge_gb FROM ssd WHERE id=%s", (item_id,))
+            d = cur.fetchone()
+            cur.execute(
+                "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)",
+                (new_id, d["speichermenge_gb"])
+            )
 
         elif typ == "cpu":
-            d = db_read("SELECT frequenz_ghz, watt FROM cpu WHERE id=%s", (item_id,))
-            db_write(
+            cur.execute("SELECT frequenz_ghz, watt FROM cpu WHERE id=%s", (item_id,))
+            d = cur.fetchone()
+            cur.execute(
                 "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)",
-                (new_id, d[0]["frequenz_ghz"], d[0]["watt"])
+                (new_id, d["frequenz_ghz"], d["watt"])
             )
 
         else:
-            db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (new_id,))
+            cur.execute(f"INSERT INTO {typ} (id) VALUES (%s)", (new_id,))
 
-        # 4️⃣ Inventar reduzieren
-        db_write(
+        # 5️⃣ Inventar reduzieren
+        cur.execute(
             "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
             (item_id,)
         )
 
-        # 5️⃣ PC-Preis erhöhen
-        db_write(
+        # 6️⃣ Preis erhöhen
+        cur.execute(
             "UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s",
             (preis, pc_id)
         )
 
-        # ✅ ALLES OK
-        db_write("COMMIT")
+        conn.commit()
 
     except Exception as e:
-        db_write("ROLLBACK")
+        conn.rollback()
         raise e
 
+    finally:
+        cur.close()
+        conn.close()
+
     return redirect(url_for("pc_detail", pc_id=pc_id))
+
 
 @app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
 @login_required

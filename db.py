@@ -57,3 +57,14 @@ def db_write(sql, params=None):
         except:
             pass
         conn.close()
+
+import mysql.connector
+
+def get_connection():
+    return mysql.connector.connect(
+        host="localhost",
+        user="...",
+        password="...",
+        database="...",
+        autocommit=False
+    )
