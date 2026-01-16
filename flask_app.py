@@ -133,13 +133,21 @@ def index():
         ORDER BY sales.verkauft_am DESC
     """)
     return render_template("dashboard.html", pcs=pcs, sales=sales)
+from decimal import Decimal
 
 @app.route("/pcs")
 @login_required
 def pc_list():
-    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
-    return render_template("pc_list.html", pcs=pcs)
+    # Alle PCs des aktuellen Users abrufen
+    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
+                  (current_user.id,))
 
+    # Decimal-Felder in float konvertieren, damit Jinja keine Fehler wirft
+    for pc in pcs:
+        if isinstance(pc["gesamtpreis"], Decimal):
+            pc["gesamtpreis"] = float(pc["gesamtpreis"])
+
+    return render_template("pc_list.html", pcs=pcs)
 
 
 @app.route("/pc/new", methods=["GET", "POST"])
@@ -149,32 +157,44 @@ def pc_new():
         name = request.form["name"]
         status = request.form.get("status", "gebaut")
 
-        
+        # PC in DB einfügen
         pc_id = db_write(
             "INSERT INTO pc (name, status, user_id) VALUES (%s, %s, %s)",
             (name, status, current_user.id)
         )
 
-        return redirect(url_for("component_new", pc_id=pc_id, typ="cpu"))
+        # Direkt zur Komponentenseite des neuen PCs weiterleiten
+        return redirect(url_for("component_new", typ="cpu"))
 
     return render_template("pc_new.html")
-
 
 
 @app.route("/pc/<int:pc_id>")
 @login_required
 def pc_detail(pc_id):
+    # PC-Daten abrufen
     pc = db_read(
         "SELECT * FROM pc WHERE id=%s AND user_id=%s",
-        (pc_id, current_user.id)
+        (pc_id, current_user.id),
+        single=True
     )
+
+    if not pc:
+        return "PC nicht gefunden", 404
+
+    # Komponenten abrufen
     komponenten = db_read(
-        "SELECT * FROM pc_komponenten WHERE pc_id=%s,
-        (pc_id)
+        "SELECT * FROM pc_komponenten WHERE pc_id=%s",
+        (pc_id,)
     )
+
+    # Decimal-Felder konvertieren
+    pc["gesamtpreis"] = float(pc["gesamtpreis"]) if isinstance(pc["gesamtpreis"], Decimal) else pc["gesamtpreis"]
+    for k in komponenten:
+        if isinstance(k.get("preis"), Decimal):
+            k["preis"] = float(k["preis"])
+
     return render_template("pc_detail.html", pc=pc, komponenten=komponenten)
-
-
 
 @app.route("/components/new/<typ>", methods=["GET", "POST"])
 @login_required
