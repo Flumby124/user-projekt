@@ -189,112 +189,107 @@ def component_new(typ):
         return "Ungültiger Komponententyp", 400
 
     if request.method == "POST":
-        marke = request.form.get("marke")
-        modell = request.form.get("modell")
-        preis = float(request.form.get("preis") or 0)
+        marke = request.form["marke"]
+        modell = request.form["modell"]
+        preis = float(request.form["preis"])
         anzahl = int(request.form.get("anzahl", 1))
 
-        for _ in range(anzahl):
-            komp_id = db_write("""
-                INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id, user_id)
-                VALUES (%s, %s, %s, %s, 1, NULL, %s)
-            """, (typ, marke, modell, preis, current_user.id))
+        komp_id = db_write("""
+            INSERT INTO pc_komponenten
+            (typ, marke, modell, preis, anzahl, pc_id, user_id)
+            VALUES (%s, %s, %s, %s, %s, NULL, %s)
+        """, (typ, marke, modell, preis, anzahl, current_user.id))
 
-            if typ == "gpu":
-                db_write(
-                    "INSERT INTO gpu (id, vram) VALUES (%s, %s)",
-                    (komp_id, request.form.get("vram"))
-                )
-
-            elif typ == "ram":
-                db_write(
-                    "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
-                    (
-                        komp_id,
-                        request.form.get("speichermenge_gb"),
-                        request.form.get("cl_rating")
-                    )
-                )
-
-            elif typ == "psu":
-                db_write(
-                    "INSERT INTO psu (id, watt) VALUES (%s, %s)",
-                    (komp_id, request.form.get("watt"))
-                )
-
-            elif typ == "ssd":
-                db_write(
-                    "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)",
-                    (komp_id, request.form.get("speichermenge_gb"))
-                )
-
-            elif typ == "cpu":
-                db_write(
-                    "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
-                    (
-                        komp_id,
-                        request.form.get("frequenz_ghz"),
-                        request.form.get("watt")
-                    )
-                )
-
-            else:
-                db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
+        # Detaildaten EINMAL anlegen
+        if typ == "gpu":
+            db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)",
+                     (komp_id, request.form["vram"]))
+        elif typ == "ram":
+            db_write("INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s,%s,%s)",
+                     (komp_id, request.form["speichermenge_gb"], request.form["cl_rating"]))
+        elif typ == "psu":
+            db_write("INSERT INTO psu (id, watt) VALUES (%s,%s)",
+                     (komp_id, request.form["watt"]))
+        elif typ == "ssd":
+            db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)",
+                     (komp_id, request.form["speichermenge_gb"]))
+        elif typ == "cpu":
+            db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)",
+                     (komp_id, request.form["frequenz_ghz"], request.form["watt"]))
+        else:
+            db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
 
         return redirect(url_for("component_new", typ=typ))
 
     return render_template("component_new.html", typ=typ)
 
-@app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>", methods=["POST"])
+@app.post("/pc/<int:pc_id>/add/<int:item_id>")
 @login_required
-def add_component(pc_id, typ, item_id):
-    if typ not in VALID_TYPES:
-        return "Ungültiger Komponententyp", 400
+def add_component(pc_id, item_id):
 
-    # Anzahl, die hinzugefügt werden soll
-    anzahl = int(request.form.get("anzahl", 1))
+    # 1️⃣ PC gehört dem User?
+    pc = db_read(
+        "SELECT id FROM pc WHERE id=%s AND user_id=%s",
+        (pc_id, current_user.id)
+    )
+    if not pc:
+        return "PC nicht gefunden", 404
 
-    # Originalteil aus dem Inventar
-    komp = db_read("SELECT * FROM pc_komponenten WHERE id=%s AND user_id=%s", (item_id, current_user.id))
+    # 2️⃣ Inventar-Teil holen
+    komp = db_read("""
+        SELECT * FROM pc_komponenten
+        WHERE id=%s AND user_id=%s AND pc_id IS NULL AND anzahl > 0
+    """, (item_id, current_user.id))
+
     if not komp:
-        return "Komponente nicht gefunden", 404
+        return "Teil nicht verfügbar", 400
+
     komp = komp[0]
-    preis = komp["preis"]
 
-    # Erstelle so viele neue Einträge, wie angegeben
-    for _ in range(anzahl):
-        new_id = db_write("""
-            INSERT INTO pc_komponenten (typ, marke, modell, preis, anzahl, pc_id, user_id)
-            VALUES (%s, %s, %s, %s, 1, %s, %s)
-        """, (komp["typ"], komp["marke"], komp["modell"], preis, pc_id, current_user.id))
+    # 3️⃣ Kopie für PC erzeugen
+    new_id = db_write("""
+        INSERT INTO pc_komponenten
+        (typ, marke, modell, preis, anzahl, pc_id, user_id)
+        VALUES (%s,%s,%s,%s,1,%s,%s)
+    """, (
+        komp["typ"],
+        komp["marke"],
+        komp["modell"],
+        komp["preis"],
+        pc_id,
+        current_user.id
+    ))
 
-        # Typ-spezifische Tabellen kopieren
-        if typ in ["gpu", "ram", "psu", "ssd", "cpu"]:
-            typ_values = db_read(f"SELECT * FROM {typ} WHERE id=%s", (item_id,))
-            if typ_values:
-                typ_values = typ_values[0]
-                if typ == "gpu":
-                    db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)", (new_id, typ_values["vram"]))
-                elif typ == "ram":
-                    db_write(
-                        "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s, %s, %s)",
-                        (new_id, typ_values["speichermenge_gb"], typ_values["cl_rating"])
-                    )
-                elif typ == "psu":
-                    db_write("INSERT INTO psu (id, watt) VALUES (%s, %s)", (new_id, typ_values["watt"]))
-                elif typ == "ssd":
-                    db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s, %s)", (new_id, typ_values["speichermenge_gb"]))
-                elif typ == "cpu":
-                    db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s, %s, %s)",
-                             (new_id, typ_values["frequenz_ghz"], typ_values["watt"]))
+    typ = komp["typ"]
 
-    # Inventar-Anzahl anpassen
-    db_write("UPDATE pc_komponenten SET anzahl = anzahl - %s WHERE id = %s", (anzahl, item_id))
+    # 4️⃣ Detaildaten kopieren
+    details = db_read(f"SELECT * FROM {typ} WHERE id=%s", (item_id,))
+    if details:
+        d = details[0]
+        cols = [k for k in d.keys() if k != "id"]
+        values = [d[c] for c in cols]
 
-    # Gesamtpreis aktualisieren
-    db_write("UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s", (preis * anzahl, pc_id))
+        placeholders = ", ".join(["%s"] * (len(cols) + 1))
+        columns = ", ".join(["id"] + cols)
 
-    return redirect(url_for("add_component_list", pc_id=pc_id, typ=typ))
+        db_write(
+            f"INSERT INTO {typ} ({columns}) VALUES ({placeholders})",
+            (new_id, *values)
+        )
+
+    # 5️⃣ Inventar-Anzahl -1
+    db_write(
+        "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
+        (item_id,)
+    )
+
+    # 6️⃣ PC-Preis erhöhen
+    db_write(
+        "UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s",
+        (komp["preis"], pc_id)
+    )
+
+    return redirect(url_for("pc_detail", pc_id=pc_id))
 
 @app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
 @login_required
