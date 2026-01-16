@@ -227,7 +227,7 @@ def component_new(typ):
 @login_required
 def add_component(pc_id, item_id):
 
-    # 1️⃣ PC gehört dem User?
+    # 1️⃣ Sicherheitschecks
     pc = db_read(
         "SELECT id FROM pc WHERE id=%s AND user_id=%s",
         (pc_id, current_user.id)
@@ -235,7 +235,6 @@ def add_component(pc_id, item_id):
     if not pc:
         return "PC nicht gefunden", 404
 
-    # 2️⃣ Inventar-Teil holen
     komp = db_read("""
         SELECT * FROM pc_komponenten
         WHERE id=%s AND user_id=%s AND pc_id IS NULL AND anzahl > 0
@@ -245,49 +244,75 @@ def add_component(pc_id, item_id):
         return "Teil nicht verfügbar", 400
 
     komp = komp[0]
-
-    # 3️⃣ Kopie für PC erzeugen
-    new_id = db_write("""
-        INSERT INTO pc_komponenten
-        (typ, marke, modell, preis, anzahl, pc_id, user_id)
-        VALUES (%s,%s,%s,%s,1,%s,%s)
-    """, (
-        komp["typ"],
-        komp["marke"],
-        komp["modell"],
-        komp["preis"],
-        pc_id,
-        current_user.id
-    ))
-
     typ = komp["typ"]
+    preis = komp["preis"]
 
-    # 4️⃣ Detaildaten kopieren
-    details = db_read(f"SELECT * FROM {typ} WHERE id=%s", (item_id,))
-    if details:
-        d = details[0]
-        cols = [k for k in d.keys() if k != "id"]
-        values = [d[c] for c in cols]
+    try:
+        # 🔒 TRANSAKTION START
+        db_write("START TRANSACTION")
 
-        placeholders = ", ".join(["%s"] * (len(cols) + 1))
-        columns = ", ".join(["id"] + cols)
+        # 2️⃣ Kopie direkt als PC-Teil anlegen
+        new_id = db_write("""
+            INSERT INTO pc_komponenten
+            (typ, marke, modell, preis, anzahl, pc_id, user_id)
+            VALUES (%s,%s,%s,%s,1,%s,%s)
+        """, (
+            typ,
+            komp["marke"],
+            komp["modell"],
+            preis,
+            pc_id,
+            current_user.id
+        ))
 
+        # 3️⃣ Detaildaten explizit kopieren
+        if typ == "gpu":
+            d = db_read("SELECT vram FROM gpu WHERE id=%s", (item_id,))
+            db_write("INSERT INTO gpu (id, vram) VALUES (%s,%s)", (new_id, d[0]["vram"]))
+
+        elif typ == "ram":
+            d = db_read("SELECT speichermenge_gb, cl_rating FROM ram WHERE id=%s", (item_id,))
+            db_write(
+                "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s,%s,%s)",
+                (new_id, d[0]["speichermenge_gb"], d[0]["cl_rating"])
+            )
+
+        elif typ == "psu":
+            d = db_read("SELECT watt FROM psu WHERE id=%s", (item_id,))
+            db_write("INSERT INTO psu (id, watt) VALUES (%s,%s)", (new_id, d[0]["watt"]))
+
+        elif typ == "ssd":
+            d = db_read("SELECT speichermenge_gb FROM ssd WHERE id=%s", (item_id,))
+            db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)", (new_id, d[0]["speichermenge_gb"]))
+
+        elif typ == "cpu":
+            d = db_read("SELECT frequenz_ghz, watt FROM cpu WHERE id=%s", (item_id,))
+            db_write(
+                "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)",
+                (new_id, d[0]["frequenz_ghz"], d[0]["watt"])
+            )
+
+        else:
+            db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (new_id,))
+
+        # 4️⃣ Inventar reduzieren
         db_write(
-            f"INSERT INTO {typ} ({columns}) VALUES ({placeholders})",
-            (new_id, *values)
+            "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
+            (item_id,)
         )
 
-    # 5️⃣ Inventar-Anzahl -1
-    db_write(
-        "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
-        (item_id,)
-    )
+        # 5️⃣ PC-Preis erhöhen
+        db_write(
+            "UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s",
+            (preis, pc_id)
+        )
 
-    # 6️⃣ PC-Preis erhöhen
-    db_write(
-        "UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s",
-        (komp["preis"], pc_id)
-    )
+        # ✅ ALLES OK
+        db_write("COMMIT")
+
+    except Exception as e:
+        db_write("ROLLBACK")
+        raise e
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
 
