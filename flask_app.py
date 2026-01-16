@@ -192,7 +192,7 @@ def component_new(typ):
         marke = request.form["marke"]
         modell = request.form["modell"]
         preis = float(request.form["preis"])
-        anzahl = int(request.form.get("anzahl", 1))
+        anzahl = 1 #int(request.form.get("anzahl", 1))
 
         komp_id = db_write("""
             INSERT INTO pc_komponenten
@@ -200,7 +200,7 @@ def component_new(typ):
             VALUES (%s, %s, %s, %s, %s, NULL, %s)
         """, (typ, marke, modell, preis, anzahl, current_user.id))
 
-        # Detaildaten EINMAL anlegen
+        
         if typ == "gpu":
             db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)",
                      (komp_id, request.form["vram"]))
@@ -233,7 +233,7 @@ def add_component(pc_id, item_id):
     Preis wird korrekt angepasst.
     """
 
-    # Komponente aus Inventar holen (nur verfügbar, pc_id=NULL)
+    
     komp = db_read("""
         SELECT preis, anzahl FROM pc_komponenten
         WHERE id=%s AND user_id=%s AND pc_id IS NULL
@@ -245,26 +245,24 @@ def add_component(pc_id, item_id):
     preis = komp["preis"]
 
     try:
-        # Anzahl erhöhen, wenn schon im PC
+        
         exists = db_read("""
             SELECT id, anzahl FROM pc_komponenten
             WHERE id=%s AND pc_id=%s
         """, (item_id, pc_id), single=True)
 
-        if exists:
-            # Nur Anzahl erhöhen
-            db_write(
-                "UPDATE pc_komponenten SET anzahl = anzahl + 1 WHERE id=%s",
-                (item_id,)
-            )
-        else:
-            # Komponente dem PC zuordnen
+        #if exists:
+            ###db_writ#e(
+                ###"UPDATE pc_komponenten SET anzahl = anzahl + 1 WHERE id=%s",
+                ##(item_id,)
+            #)
+        if:
+            
             db_write(
                 "UPDATE pc_komponenten SET pc_id=%s WHERE id=%s",
                 (pc_id, item_id)
             )
 
-        # PC-Preis korrekt erhöhen
         db_write(
             "UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s",
             (preis, pc_id)
@@ -307,19 +305,19 @@ def remove_component(item_id, pc_id):
 
     try:
         if component["anzahl"] > 1:
-            # Nur Anzahl reduzieren
+            
             db_write(
                 "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
                 (item_id,)
             )
         else:
-            # Letzte Kopie → wirklich löschen
+            
             db_write(
                 "DELETE FROM pc_komponenten WHERE id=%s",
                 (item_id,)
             )
 
-        # Preis immer GENAU EINMAL reduzieren
+       
         db_write(
             "UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s",
             (component["preis"], pc_id)
