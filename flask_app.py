@@ -223,149 +223,58 @@ def component_new(typ):
 
     return render_template("component_new.html", typ=typ)
 
-@app.post("/pc/<int:pc_id>/add/<int:item_id>")
+
+@app.route("/pc/<int:pc_id>/add/<int:item_id>")
 @login_required
 def add_component(pc_id, item_id):
+    """
+    Fügt eine Komponente einem PC hinzu.
+    Wenn bereits vorhanden: Anzahl erhöhen.
+    Preis wird korrekt angepasst.
+    """
 
-    conn = get_connection()
-    cur = conn.cursor(dictionary=True)
+    # Komponente aus Inventar holen (nur verfügbar, pc_id=NULL)
+    komp = db_read("""
+        SELECT preis, anzahl FROM pc_komponenten
+        WHERE id=%s AND user_id=%s AND pc_id IS NULL
+    """, (item_id, current_user.id), single=True)
+
+    if not komp:
+        return "Komponente nicht verfügbar", 404
+
+    preis = komp["preis"]
 
     try:
-        # 1️⃣ PC prüfen
-        cur.execute(
-            "SELECT id FROM pc WHERE id=%s AND user_id=%s",
-            (pc_id, current_user.id)
-        )
-        if not cur.fetchone():
-            return "PC nicht gefunden", 404
+        # Anzahl erhöhen, wenn schon im PC
+        exists = db_read("""
+            SELECT id, anzahl FROM pc_komponenten
+            WHERE id=%s AND pc_id=%s
+        """, (item_id, pc_id), single=True)
 
-        # 2️⃣ Inventar prüfen
-        cur.execute("""
-            SELECT * FROM pc_komponenten
-            WHERE id=%s AND user_id=%s AND pc_id IS NULL AND anzahl > 0
-        """, (item_id, current_user.id))
-        komp = cur.fetchone()
-
-        if not komp:
-            return "Teil nicht verfügbar", 400
-
-        typ = komp["typ"]
-        preis = komp["preis"]
-
-        # 🔒 TRANSAKTION
-        # 3️⃣ Kopie anlegen
-        cur.execute("""
-            INSERT INTO pc_komponenten
-            (typ, marke, modell, preis, anzahl, pc_id, user_id)
-            VALUES (%s,%s,%s,%s,1,%s,%s)
-        """, (
-            typ,
-            komp["marke"],
-            komp["modell"],
-            preis,
-            pc_id,
-            current_user.id
-        ))
-        new_id = cur.lastrowid
-
-        # 4️⃣ Detaildaten kopieren
-        if typ == "gpu":
-            cur.execute("SELECT vram FROM gpu WHERE id=%s", (item_id,))
-            d = cur.fetchone()
-            cur.execute("INSERT INTO gpu (id, vram) VALUES (%s,%s)", (new_id, d["vram"]))
-
-        elif typ == "ram":
-            cur.execute("SELECT speichermenge_gb, cl_rating FROM ram WHERE id=%s", (item_id,))
-            d = cur.fetchone()
-            cur.execute(
-                "INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s,%s,%s)",
-                (new_id, d["speichermenge_gb"], d["cl_rating"])
+        if exists:
+            # Nur Anzahl erhöhen
+            db_write(
+                "UPDATE pc_komponenten SET anzahl = anzahl + 1 WHERE id=%s",
+                (item_id,)
             )
-
-        elif typ == "psu":
-            cur.execute("SELECT watt FROM psu WHERE id=%s", (item_id,))
-            d = cur.fetchone()
-            cur.execute("INSERT INTO psu (id, watt) VALUES (%s,%s)", (new_id, d["watt"]))
-
-        elif typ == "ssd":
-            cur.execute("SELECT speichermenge_gb FROM ssd WHERE id=%s", (item_id,))
-            d = cur.fetchone()
-            cur.execute(
-                "INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)",
-                (new_id, d["speichermenge_gb"])
-            )
-
-        elif typ == "cpu":
-            cur.execute("SELECT frequenz_ghz, watt FROM cpu WHERE id=%s", (item_id,))
-            d = cur.fetchone()
-            cur.execute(
-                "INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)",
-                (new_id, d["frequenz_ghz"], d["watt"])
-            )
-
         else:
-            cur.execute(f"INSERT INTO {typ} (id) VALUES (%s)", (new_id,))
+            # Komponente dem PC zuordnen
+            db_write(
+                "UPDATE pc_komponenten SET pc_id=%s WHERE id=%s",
+                (pc_id, item_id)
+            )
 
-        # 5️⃣ Inventar reduzieren
-        cur.execute(
-            "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
-            (item_id,)
-        )
-
-        # 6️⃣ Preis erhöhen
-        cur.execute(
+        # PC-Preis korrekt erhöhen
+        db_write(
             "UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s",
             (preis, pc_id)
         )
 
-        conn.commit()
-
     except Exception as e:
-        conn.rollback()
-        raise e
-
-    finally:
-        cur.close()
-        conn.close()
+        print("ADD COMPONENT ERROR:", e)
+        return "Fehler beim Hinzufügen", 500
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
-
-
-@app.route("/pc/<int:pc_id>/add/<typ>/<int:item_id>")
-@login_required
-def add_component(pc_id, typ, item_id):
-
-    # Sicherheitscheck
-    komp = db_read("""
-        SELECT preis FROM pc_komponenten
-        WHERE id=%s AND user_id=%s AND pc_id IS NULL
-    """, (item_id, current_user.id))
-
-    if not komp:
-        return "Komponente nicht gefunden", 404
-
-    preis = komp[0]["preis"]
-
-    # Komponente dem PC zuordnen
-    db_write("""
-        UPDATE pc_komponenten
-        SET pc_id=%s
-        WHERE id=%s
-    """, (pc_id, item_id))
-
-    # Preis addieren
-    db_write("""
-        UPDATE pc
-        SET gesamtpreis = gesamtpreis + %s
-        WHERE id=%s AND user_id=%s
-    """, (preis, pc_id, current_user.id))
-
-    # Weiter zum nächsten Typ
-    try:
-        next_typ = COMPONENT_ORDER[COMPONENT_ORDER.index(typ) + 1]
-        return redirect(url_for("add_component_list", pc_id=pc_id, typ=next_typ))
-    except (ValueError, IndexError):
-        return redirect(url_for("pc_detail", pc_id=pc_id))
 
 
 @app.route("/pc/<int:pc_id>/sell", methods=["GET", "POST"])
@@ -383,19 +292,42 @@ def sell_pc(pc_id):
     return render_template("sell_pc.html", pc=pc)
 
 
-@app.route("/pc/<int:pc_id>/remove/<int:item_id>")
+@app.route("/remove_component/<int:item_id>/<int:pc_id>")
 @login_required
-def remove_component(pc_id, item_id):
-    
-    preis = db_read("SELECT preis FROM pc_komponenten WHERE id=%s", (item_id,))
-    if not preis:
-        return "Komponente nicht gefunden", 404
-    preis = preis[0]["preis"]
+def remove_component(item_id, pc_id):
 
+    component = db_read(
+        "SELECT preis, anzahl FROM pc_komponenten WHERE id=%s AND pc_id=%s",
+        (item_id, pc_id),
+        single=True
+    )
 
-    db_write("UPDATE pc_komponenten SET pc_id=NULL WHERE id=%s", (item_id,))
+    if not component:
+        abort(404)
 
-    db_write("UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s", (preis, pc_id))
+    try:
+        if component["anzahl"] > 1:
+            # Nur Anzahl reduzieren
+            db_write(
+                "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
+                (item_id,)
+            )
+        else:
+            # Letzte Kopie → wirklich löschen
+            db_write(
+                "DELETE FROM pc_komponenten WHERE id=%s",
+                (item_id,)
+            )
+
+        # Preis immer GENAU EINMAL reduzieren
+        db_write(
+            "UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s",
+            (component["preis"], pc_id)
+        )
+
+    except Exception as e:
+        print("REMOVE COMPONENT ERROR:", e)
+        abort(500)
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
 
