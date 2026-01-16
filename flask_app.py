@@ -139,7 +139,8 @@ def index():
 def pc_list():
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
                   (current_user.id,))
-    return render_template("pc_list.html", pcs=pcs)
+    # Debug: einfach die Rohdaten als Text ausgeben
+    return f"PCs: {pcs}"
 
 @app.route("/pc/new", methods=["GET", "POST"])
 @login_required
