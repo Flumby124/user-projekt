@@ -119,8 +119,7 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
-COMPONENT_ORDER = ["cpu", "gpu", "ram", "ssd", "psu", "pc_case", "fans", "kuehler", "argb", "extensions"]
-
+OMPONENT_ORDER = ["cpu", "mobo", "gpu", "ram", "ssd", "psu", "pc_case", "fans", "kuehler", "argb", "extensions"]
 
 @app.route("/")
 @login_required
@@ -133,20 +132,14 @@ def index():
         JOIN pc ON pc.id = sales.pc_id
         ORDER BY sales.verkauft_am DESC
     """)
-
     return render_template("dashboard.html", pcs=pcs, sales=sales)
-
 
 @app.route("/pcs")
 @login_required
 def pc_list():
-    pcs = db_read(
-        "SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
-        (current_user.id,)
-    )
+    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
+                  (current_user.id,))
     return render_template("pc_list.html", pcs=pcs)
-
-
 
 @app.route("/pc/new", methods=["GET", "POST"])
 @login_required
