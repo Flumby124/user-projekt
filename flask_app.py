@@ -169,8 +169,8 @@ def pc_detail(pc_id):
         (pc_id, current_user.id)
     )
     komponenten = db_read(
-        "SELECT * FROM pc_komponenten WHERE pc_id=%s AND user_id=%s",
-        (pc_id, current_user.id)
+        "SELECT * FROM pc_komponenten WHERE pc_id=%s,
+        (pc_id)
     )
     return render_template("pc_detail.html", pc=pc, komponenten=komponenten)
 
