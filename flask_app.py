@@ -142,7 +142,7 @@ def pc_list():
     
     pcs = db_read(
         "SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
-        (current_user.id,)
+        
     )
     print("DEBUG pcs:", pcs)
     
