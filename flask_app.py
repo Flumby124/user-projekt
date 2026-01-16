@@ -137,16 +137,9 @@ def index():
 @app.route("/pcs")
 @login_required
 def pc_list():
-    print("DEBUG current_user:", current_user)
-    print("DEBUG current_user.id:", getattr(current_user, "id", None))
-    
-    pcs = db_read(
-        "SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
-        (current_user.id,)
-    )
-
-    print("DEBUG pcs:", pcs)
-    
+    print("DEBUG: pc_list aufgerufen")  # erscheint im Error Log
+    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
+    print("DEBUG: pcs =", pcs)
     return f"PCs: {pcs}"
 
 
