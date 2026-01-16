@@ -119,7 +119,7 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
-OMPONENT_ORDER = ["cpu", "mobo", "gpu", "ram", "ssd", "psu", "pc_case", "fans", "kuehler", "argb", "extensions"]
+COMPONENT_ORDER = ["cpu", "mobo", "gpu", "ram", "ssd", "psu", "pc_case", "fans", "kuehler", "argb", "extensions"]
 
 @app.route("/")
 @login_required
