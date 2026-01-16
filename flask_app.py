@@ -216,6 +216,8 @@ def component_new(typ):
         elif typ == "cpu":
             db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)",
                      (komp_id, request.form["frequenz_ghz"], request.form["watt"]))
+        elif typ == "mobo":
+            db_write("INSERT INTO mobo (id) VALUES (%s)", (komp_id,))
         else:
             db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
 
