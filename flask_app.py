@@ -137,10 +137,9 @@ def index():
 @app.route("/pcs")
 @login_required
 def pc_list():
-    print("DEBUG: pc_list aufgerufen")  # erscheint im Error Log
     pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
-    print("DEBUG: pcs =", pcs)
-    return f"PCs: {pcs}"
+    return render_template("pc_list.html", pcs=pcs)
+
 
 
 @app.route("/pc/new", methods=["GET", "POST"])
