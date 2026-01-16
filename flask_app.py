@@ -258,12 +258,12 @@ def add_component(pc_id, item_id):
                 ###"UPDATE pc_komponenten SET anzahl = anzahl + 1 WHERE id=%s",
                 ##(item_id,)
             #)
-        if:
+        
             
-            db_write(
-                "UPDATE pc_komponenten SET pc_id=%s WHERE id=%s",
-                (pc_id, item_id)
-            )
+        db_write(
+            "UPDATE pc_komponenten SET pc_id=%s WHERE id=%s",
+            (pc_id, item_id)
+        )
 
         db_write(
             "UPDATE pc SET gesamtpreis = gesamtpreis + %s WHERE id=%s",
