@@ -17,23 +17,13 @@ def get_conn():
     return pool.get_connection()
 
 # DB-Helper
-def db_read(sql, params=None, single=False):
+def db_write(sql, params=None):
     conn = get_conn()
     try:
         cur = conn.cursor(dictionary=True)
         cur.execute(sql, params or ())
-
-        if single:
-            # liefert EIN Dict oder None
-            row = cur.fetchone()
-            print("db_read(single=True) ->", row)   # DEBUG
-            return row
-        else:
-            # liefert Liste von Dicts (evtl. [])
-            rows = cur.fetchall()
-            print("db_read(single=False) ->", rows)  # DEBUG
-            return rows
-
+        conn.commit()
+        return cur.lastrowid
     finally:
         try:
             cur.close()
@@ -52,11 +42,3 @@ def db_write(sql, params=None):
 
 import mysql.connector
 
-def get_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="...",
-        password="...",
-        database="...",
-        autocommit=False
-    )
