@@ -2,8 +2,8 @@ from dotenv import load_dotenv
 import os
 from mysql.connector import pooling
 
-# Load .env variables
 load_dotenv()
+
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
     "user": os.getenv("DB_USER"),
@@ -11,34 +11,34 @@ DB_CONFIG = {
     "database": os.getenv("DB_DATABASE")
 }
 
-# Init db
-pool = pooling.MySQLConnectionPool(pool_name="pool", pool_size=1, **DB_CONFIG)
+pool = pooling.MySQLConnectionPool(
+    pool_name="pool",
+    pool_size=5,
+    **DB_CONFIG
+)
+
 def get_conn():
     return pool.get_connection()
 
-# DB-Helper
-def db_write(sql, params=None):
+
+def db_read(sql, params=None, single=False):
     conn = get_conn()
     try:
         cur = conn.cursor(dictionary=True)
         cur.execute(sql, params or ())
-        conn.commit()
-        return cur.lastrowid
+        return cur.fetchone() if single else cur.fetchall()
     finally:
-        try:
-            cur.close()
-        except:
-            pass
+        cur.close()
         conn.close()
 
 
 def db_write(sql, params=None):
-    cnx = get_connection()
-    cursor = cnx.cursor(dictionary=True)
-    cursor.execute(sql, params or ())
-    cnx.commit()
-    return cursor.lastrowid  # <--- gibt ID zurück
-
-
-import mysql.connector
-
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(sql, params or ())
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        cur.close()
+        conn.close()
