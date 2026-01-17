@@ -55,6 +55,7 @@ def webhook():
         return 'Updated PythonAnywhere successfully', 200
     return 'Unauthorized', 401
 
+from decimal import Decimal
 
 @app.route("/pcs")
 @login_required
@@ -64,8 +65,15 @@ def pc_list():
         (current_user.id,)
     )
 
-    print("PCS DEBUG:", pcs)  # 👈 DAS
-    return "OK"
+    pcs = pcs or []
+
+    # Decimal oder NULL korrekt konvertieren
+    for pc in pcs:
+        pc["gesamtpreis"] = float(pc.get("gesamtpreis") or 0)
+
+    print("DEBUG pcs:", pcs)  # Debug-Ausgabe
+
+    return render_template("pc_list.html", pcs=pcs)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -143,7 +151,7 @@ def index():
         ORDER BY sales.verkauft_am DESC
     """)
     return render_template("dashboard.html", pcs=pcs, sales=sales)
-from decimal import Decimal
+
 
 
 
@@ -200,37 +208,45 @@ def component_new(typ):
         return "Ungültiger Komponententyp", 400
 
     if request.method == "POST":
-        marke = request.form["marke"]
-        modell = request.form["modell"]
-        preis = float(request.form["preis"])
-        anzahl = 1 #int(request.form.get("anzahl", 1))
+        try:
+            marke = request.form.get("marke", "")
+            modell = request.form.get("modell", "")
+            preis = float(request.form.get("preis") or 0)
+            anzahl = int(request.form.get("anzahl") or 1)
 
-        komp_id = db_write("""
-            INSERT INTO pc_komponenten
-            (typ, marke, modell, preis, anzahl, pc_id, user_id)
-            VALUES (%s, %s, %s, %s, %s, NULL, %s)
-        """, (typ, marke, modell, preis, anzahl, current_user.id))
+            komp_id = db_write("""
+                INSERT INTO pc_komponenten
+                (typ, marke, modell, preis, anzahl, pc_id, user_id)
+                VALUES (%s, %s, %s, %s, %s, NULL, %s)
+            """, (typ, marke, modell, preis, anzahl, current_user.id))
 
-        
-        if typ == "gpu":
-            db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)",
-                     (komp_id, request.form["vram"]))
-        elif typ == "ram":
-            db_write("INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s,%s,%s)",
-                     (komp_id, request.form["speichermenge_gb"], request.form["cl_rating"]))
-        elif typ == "psu":
-            db_write("INSERT INTO psu (id, watt) VALUES (%s,%s)",
-                     (komp_id, request.form["watt"]))
-        elif typ == "ssd":
-            db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)",
-                     (komp_id, request.form["speichermenge_gb"]))
-        elif typ == "cpu":
-            db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)",
-                     (komp_id, request.form["frequenz_ghz"], request.form["watt"]))
-        elif typ == "mobo":
-            db_write("INSERT INTO mobo (id) VALUES (%s)", (komp_id,))
-        else:
-            db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
+            # Subtabellen
+            if typ == "gpu":
+                vram = int(request.form.get("vram") or 0)
+                db_write("INSERT INTO gpu (id, vram) VALUES (%s, %s)", (komp_id, vram))
+            elif typ == "ram":
+                speicher = int(request.form.get("speichermenge_gb") or 0)
+                cl = request.form.get("cl_rating") or ""
+                db_write("INSERT INTO ram (id, speichermenge_gb, cl_rating) VALUES (%s,%s,%s)",
+                         (komp_id, speicher, cl))
+            elif typ == "psu":
+                watt = int(request.form.get("watt") or 0)
+                db_write("INSERT INTO psu (id, watt) VALUES (%s,%s)", (komp_id, watt))
+            elif typ == "ssd":
+                speicher = int(request.form.get("speichermenge_gb") or 0)
+                db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)", (komp_id, speicher))
+            elif typ == "cpu":
+                freq = float(request.form.get("frequenz_ghz") or 0)
+                watt = int(request.form.get("watt") or 0)
+                db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)", (komp_id, freq, watt))
+            elif typ == "mobo":
+                db_write("INSERT INTO mobo (id) VALUES (%s)", (komp_id,))
+            else:
+                db_write(f"INSERT INTO {typ} (id) VALUES (%s)", (komp_id,))
+
+        except Exception as e:
+            print("COMPONENT NEW ERROR:", e)
+            return "Fehler beim Hinzufügen der Komponente", 500
 
         return redirect(url_for("component_new", typ=typ))
 
@@ -356,26 +372,6 @@ def delete_pc(pc_id):
     
     return redirect(url_for("pc_list"))
 
-@app.route("/component/<int:item_id>/delete")
-@login_required
-def delete_component(item_id):
-    komp = db_read("SELECT typ, pc_id FROM pc_komponenten WHERE id=%s", (item_id,))
-    if not komp or komp[0]["user_id"] != current_user.id:
-        return "Komponente nicht gefunden", 404
-
-    typ = komp[0]["typ"]
-    pc_id = komp[0]["pc_id"]
-
-    
-    if pc_id is not None:
-        return "Komponente ist einem PC zugeordnet! Entferne sie zuerst vom PC.", 400
-
-    
-    if typ in ["gpu", "ram", "psu", "ssd", "cpu", "mobo", "pc_case", "fans", "kuehler", "argb", "extensions"]:
-        db_write(f"DELETE FROM {typ} WHERE id=%s", (item_id,))
-
-    
-    db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
-
-    return redirect(request.referrer or url_for("component_new", typ=typ))
-
+komp = db_read("SELECT typ, pc_id, user_id FROM pc_komponenten WHERE id=%s", (item_id,))
+if not komp or komp[0]["user_id"] != current_user.id:
+    return "Komponente nicht gefunden", 404
