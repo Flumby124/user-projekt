@@ -5,34 +5,13 @@
 
 <h2>Aktuelle PCs</h2>
 <ul>
-    {% for pc in pcs %}
-    <li>
-        <a href="{{ url_for('pc_detail', pc_id=pc.id) }}">
-            {{ pc.name }} – {{ pc.gesamtpreis }} CHF
-        </a>
-    </li>
-    {% endfor %}
+  {% for pc in pcs %}
+  <li>
+    <a href="{{ url_for('pc_detail', pc_id=pc.id) }}">
+      {{ pc.name }} – {{ pc.gesamtpreis }} CHF
+    </a>
+  </li>
+  {% endfor %}
 </ul>
-
-<h2>Verkäufe</h2>
-<table>
-    <tr>
-        <th>PC</th>
-        <th>Verkaufspreis</th>
-        <th>Datum</th>
-        <th>Profit</th>
-    </tr>
-
-    {% for s in sales %}
-    <tr>
-        <td>
-            a href="{{ url_for('pc_detail', pc_id=s.pc_id) }}">{{ s.name }}</a>
-        </td>
-        <td>{{ s.verkaufspreis }} CHF</td>
-        <td>{{ s.verkauft_am }}</td>
-        <td>{{ s.profit }} CHF</td>
-    </tr>
-    {% endfor %}
-</table>
 
 {% endblock %}

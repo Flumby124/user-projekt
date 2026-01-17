@@ -145,15 +145,19 @@ COMPONENT_ORDER = ["cpu", "mobo", "gpu", "ram", "ssd", "psu", "pc_case", "fans",
 @app.route("/")
 @login_required
 def index():
-    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc ORDER BY id DESC")
-    sales = db_read("""
-        SELECT pc.name, sales.verkaufspreis, sales.verkauft_am,
-               (sales.verkaufspreis - pc.gesamtpreis) AS profit
-        FROM sales
-        JOIN pc ON pc.id = sales.pc_id
-        ORDER BY sales.verkauft_am DESC
-    """)
-    return render_template("dashboard.html", pcs=pcs, sales=sales)
+    # Alle PCs vom aktuellen User
+    pcs = db_read("""
+        SELECT id, name, status, gesamtpreis
+        FROM pc
+        WHERE user_id=%s
+        ORDER BY id DESC
+    """, (current_user.id,)) or []
+
+    # Decimal oder NULL korrekt konvertieren
+    for pc in pcs:
+        pc["gesamtpreis"] = float(pc.get("gesamtpreis") or 0)
+
+    return render_template("dashboard.html", pcs=pcs)
 
 
 
