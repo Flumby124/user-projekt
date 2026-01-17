@@ -47,7 +47,7 @@ def db_read(sql, params=None, single=False):
 
 
 def db_write(sql, params=None):
-    cnx = get_connection()
+    cnx = get_conn()
     try:
         cursor = cnx.cursor(dictionary=True)
         cursor.execute(sql, params or ())
