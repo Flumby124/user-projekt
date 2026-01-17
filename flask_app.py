@@ -361,17 +361,13 @@ def remove_component(item_id, pc_id):
 @app.route("/pc/<int:pc_id>/delete")
 @login_required
 def delete_pc(pc_id):
-    
-    db_write("UPDATE pc_komponenten SET pc_id=NULL WHERE pc_id=%s", (pc_id,))
-    
-    
-    db_write("DELETE FROM sales WHERE pc_id=%s", (pc_id,))
-    
-    
-    db_write("DELETE FROM pc WHERE id=%s", (pc_id,))
-    
-    return redirect(url_for("pc_list"))
 
-komp = db_read("SELECT typ, pc_id, user_id FROM pc_komponenten WHERE id=%s", (item_id,))
-if not komp or komp[0]["user_id"] != current_user.id:
-    return "Komponente nicht gefunden", 404
+    pc = db_read("SELECT user_id FROM pc WHERE id=%s", (pc_id,))
+    if not pc or pc[0]["user_id"] != current_user.id:
+        return "PC nicht gefunden", 404
+
+    db_write("UPDATE pc_komponenten SET pc_id=NULL WHERE pc_id=%s", (pc_id,))
+    db_write("DELETE FROM sales WHERE pc_id=%s", (pc_id,))
+    db_write("DELETE FROM pc WHERE id=%s", (pc_id,))
+
+    return redirect(url_for("pc_list"))
