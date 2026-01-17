@@ -10,16 +10,16 @@
 <h3>Komponenten hinzufügen</h3>
 
 <div class="btn-group">
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='cpu') }}">CPU</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='gpu') }}">GPU</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='ram') }}">RAM</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='ssd') }}">SSD</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='psu') }}">Netzteil</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='pc_case') }}">Gehäuse</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='fans') }}">Lüfter</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='kuehler') }}">Kühler</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='argb') }}">ARGB</a>
-  <a class="btn btn-default" href="{{ url_for('add_component_list', pc_id=pc.id, typ='extensions') }}">Extensions</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='cpu') }}">CPU</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='gpu') }}">GPU</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='ram') }}">RAM</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='ssd') }}">SSD</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='psu') }}">Netzteil</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='pc_case') }}">Gehäuse</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='fans') }}">Lüfter</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='kuehler') }}">Kühler</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='argb') }}">ARGB</a>
+  <a class="btn btn-default" href="{{ url_for('add_component', pc_id=pc.id, typ='extensions') }}">Extensions</a>
 </div>
 
 <hr>
