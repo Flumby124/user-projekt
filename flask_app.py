@@ -336,16 +336,16 @@ from flask import abort, redirect, url_for
 @app.route("/remove_component/<int:item_id>/<int:pc_id>")
 @login_required
 def remove_component(item_id, pc_id):
+    component = db_read(
+        "SELECT id, typ, preis, anzahl FROM pc_komponenten WHERE id=%s AND pc_id=%s",
+        (item_id, pc_id),
+        single=True
+    )
+
+    if not component:
+        abort(404)
+
     try:
-        component = db_read(
-            "SELECT id, typ, preis, anzahl FROM pc_komponenten WHERE id=%s AND pc_id=%s",
-            (item_id, pc_id),
-            single=True
-        )
-
-        if not component:
-            abort(404)
-
         preis = component["preis"] or 0  # Sicherheit gegen NULL
 
         if component["anzahl"] > 1:
@@ -356,7 +356,9 @@ def remove_component(item_id, pc_id):
         db_write("UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s", (preis, pc_id))
 
     except Exception as e:
-        print("REMOVE COMPONENT ERROR:", e)
+        import traceback
+        print("🔥 REMOVE COMPONENT ERROR 🔥")
+        traceback.print_exc()   # <-- Das zeigt jetzt die echte Ursache
         abort(500)
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
