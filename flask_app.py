@@ -56,6 +56,16 @@ def webhook():
     return 'Unauthorized', 401
 
 
+@app.route("/pcs")
+@login_required
+def pc_list():
+    pcs = db_read(
+        "SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
+        (current_user.id,)
+    )
+
+    print("PCS DEBUG:", pcs)  # 👈 DAS
+    return "OK"
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -135,19 +145,6 @@ def index():
     return render_template("dashboard.html", pcs=pcs, sales=sales)
 from decimal import Decimal
 
-@app.route("/pcs")
-@login_required
-def pc_list():
-    # Alle PCs des aktuellen Users abrufen
-    pcs = db_read("SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
-                  (current_user.id,))
-
-    # Decimal-Felder in float konvertieren, damit Jinja keine Fehler wirft
-    for pc in pcs:
-        if isinstance(pc["gesamtpreis"], Decimal):
-            pc["gesamtpreis"] = float(pc["gesamtpreis"])
-
-    return render_template("pc_list.html", pcs=pcs)
 
 
 @app.route("/pc/new", methods=["GET", "POST"])
