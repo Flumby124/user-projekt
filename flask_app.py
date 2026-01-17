@@ -315,7 +315,7 @@ def add_component(pc_id, item_id):
         print("ADD COMPONENT ERROR:", e)
         return "Fehler beim Hinzufügen", 500
 
-    return redirect(url_for("pc_detail", pc_id=pc_id))
+    return redirect(url_for("pc_detail", pc_id=int(pc_id))
 
 
 @app.route("/pc/<int:pc_id>/sell", methods=["GET", "POST"])
@@ -373,7 +373,7 @@ def remove_component(item_id, pc_id):
         print("REMOVE COMPONENT ERROR:", e)
         return "Fehler beim Entfernen der Komponente", 500
 
-    return redirect(url_for("pc_detail", pc_id=pc_id))
+    return redirect(url_for("pc_detail", pc_id=ipc_id))  
 
 @app.route("/pc/<int:pc_id>/delete")
 @login_required
