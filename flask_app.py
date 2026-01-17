@@ -61,18 +61,20 @@ from decimal import Decimal
 @app.route("/pcs")
 @login_required
 def pc_list():
-    pcs = db_read(
-        "SELECT id, name, status, gesamtpreis FROM pc WHERE user_id=%s ORDER BY id DESC",
-        (current_user.id,)
-    )
+    # Nur unverkaufte PCs
+    pcs = db_read("""
+        SELECT id, name, status, gesamtpreis 
+        FROM pc 
+        WHERE user_id=%s
+        AND id NOT IN (SELECT pc_id FROM sales)
+        ORDER BY id DESC
+    """, (current_user.id,))
 
     pcs = pcs or []
 
     # Decimal oder NULL korrekt konvertieren
     for pc in pcs:
         pc["gesamtpreis"] = float(pc.get("gesamtpreis") or 0)
-
-    print("DEBUG pcs:", pcs)  # Debug-Ausgabe
 
     return render_template("pc_list.html", pcs=pcs)
 
@@ -400,3 +402,33 @@ def delete_component(item_id):
 
     # Zurück zur Component List der gleichen Kategorie
     return redirect(url_for("component_new", typ=komp["typ"]))
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    # Aktuelle PCs (nicht verkauft)
+    pcs = db_read("""
+        SELECT id, name, status, gesamtpreis 
+        FROM pc 
+        WHERE user_id=%s
+        AND id NOT IN (SELECT pc_id FROM sales)
+        ORDER BY id DESC
+    """, (current_user.id,)) or []
+
+    for pc in pcs:
+        pc["gesamtpreis"] = float(pc.get("gesamtpreis") or 0)
+
+    # Verkäufe (verkaufte PCs)
+    sales = db_read("""
+        SELECT s.id, s.pc_id, s.verkaufspreis, s.verkauft_am,
+               pc.name, pc.gesamtpreis
+        FROM sales s
+        JOIN pc pc ON s.pc_id = pc.id
+        WHERE s.user_id=%s
+        ORDER BY s.verkauft_am DESC
+    """, (current_user.id,)) or []
+
+    for s in sales:
+        s["profit"] = float(s["verkaufspreis"]) - float(s["gesamtpreis"] or 0)
+
+    return render_template("dashboard.html", pcs=pcs, sales=sales)

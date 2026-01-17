@@ -25,7 +25,9 @@
 
     {% for s in sales %}
     <tr>
-        <td>{{ s.name }}</td>
+        <td>
+            a href="{{ url_for('pc_detail', pc_id=s.pc_id) }}">{{ s.name }}</a>
+        </td>
         <td>{{ s.verkaufspreis }} CHF</td>
         <td>{{ s.verkauft_am }}</td>
         <td>{{ s.profit }} CHF</td>
