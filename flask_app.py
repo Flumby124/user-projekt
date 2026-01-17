@@ -382,3 +382,22 @@ def delete_pc(pc_id):
     db_write("DELETE FROM pc WHERE id=%s", (pc_id,))
 
     return redirect(url_for("pc_list"))
+
+@app.route("/components/delete/<int:item_id>", methods=["POST"])
+@login_required
+def delete_component(item_id):
+    # Prüfen, ob die Komponente existiert und dem aktuellen User gehört
+    komp = db_read(
+        "SELECT user_id, typ FROM pc_komponenten WHERE id=%s",
+        (item_id,),
+        single=True
+    )
+
+    if not komp or komp["user_id"] != current_user.id:
+        return "Komponente nicht gefunden", 404
+
+    # Komponente löschen
+    db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
+
+    # Zurück zur Component List der gleichen Kategorie
+    return redirect(url_for("component_new", typ=komp["typ"]))
