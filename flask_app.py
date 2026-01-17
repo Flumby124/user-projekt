@@ -156,8 +156,8 @@ def pc_new():
 
         # PC in DB einfügen
         pc_id = db_write(
-            "INSERT INTO pc (name, status, user_id, gesamtpreis) VALUES (%s, %s, %s, 0)",
-            (name, status, current_user.id)
+            "INSERT INTO pc (name, status, user_id, gesamtpreis) VALUES (%s, %s, %s, %s)",
+            (name, status, current_user.id, 0)
         )
 
         # Direkt zur Komponentenseite des neuen PCs weiterleiten
