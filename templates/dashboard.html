@@ -1,17 +1,28 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h1>Dashboard</h1>
+<div class="container mt-4">
+  <h1 class="mb-4">Dashboard</h1>
 
-<h2>Aktuelle PCs</h2>
-<ul>
-  {% for pc in pcs %}
-  <li>
-    <a href="{{ url_for('pc_detail', pc_id=pc.id) }}">
-      {{ pc.name }} – {{ pc.gesamtpreis }} CHF
-    </a>
-  </li>
-  {% endfor %}
-</ul>
+  <h2>Aktuelle PCs</h2>
+  {% if pcs %}
+    <div class="row">
+      {% for pc in pcs %}
+      <div class="col-md-4">
+        <div class="card mb-3 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">{{ pc.name }}</h5>
+            <p class="card-text"><strong>Preis:</strong> {{ pc.gesamtpreis }} CHF</p>
+            <p class="card-text"><strong>Status:</strong> {{ pc.status }}</p>
+            <a href="{{ url_for('pc_detail', pc_id=pc.id) }}" class="btn btn-primary btn-sm">Details</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>Du hast noch keine PCs erstellt.</p>
+  {% endif %}
+</div>
 
 {% endblock %}
