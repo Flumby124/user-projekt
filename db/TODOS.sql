@@ -5,9 +5,7 @@ CREATE TABLE users (
     password VARCHAR(250) NOT NULL
 );
 
-ALTER TABLE pc
-ADD COLUMN user_id INT NOT NULL DEFAULT 1
-;
+
 
 CREATE TABLE pc (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -109,3 +107,27 @@ CREATE TABLE sales (
     verkauft_am DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (pc_id) REFERENCES pc(id) ON DELETE CASCADE
 );
+
+-- 1️⃣ PC Tabelle
+ALTER TABLE pc
+ADD COLUMN user_id INT NOT NULL DEFAULT 1;
+
+ALTER TABLE pc
+ADD CONSTRAINT fk_pc_user
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- 2️⃣ Komponenten Tabelle
+ALTER TABLE pc_komponenten
+ADD COLUMN user_id INT NOT NULL DEFAULT 1;
+
+ALTER TABLE pc_komponenten
+ADD CONSTRAINT fk_pc_komponenten_user
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+-- 3️⃣ Sales Tabelle
+ALTER TABLE sales
+ADD COLUMN user_id INT NOT NULL DEFAULT 1;
+
+ALTER TABLE sales
+ADD CONSTRAINT fk_sales_user
+FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
