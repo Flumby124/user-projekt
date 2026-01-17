@@ -249,10 +249,6 @@ def component_new(typ):
             elif typ == "ssd":
                 speicher = int(request.form.get("speichermenge_gb") or 0)
                 db_write("INSERT INTO ssd (id, speichermenge_gb) VALUES (%s,%s)", (komp_id, speicher))
-            elif typ == "cpu":
-                freq = float(request.form.get("frequenz_ghz") or 0)
-                watt = int(request.form.get("watt") or 0)
-                db_write("INSERT INTO cpu (id, frequenz_ghz, watt) VALUES (%s,%s,%s)", (komp_id, freq, watt))
             elif typ == "mobo":
                 db_write("INSERT INTO mobo (id) VALUES (%s)", (komp_id,))
             else:
@@ -315,7 +311,7 @@ def add_component(pc_id, item_id):
         print("ADD COMPONENT ERROR:", e)
         return "Fehler beim Hinzufügen", 500
 
-    return redirect(url_for("pc_detail", pc_id=int(pc_id))
+    return redirect(url_for("pc_detail", pc_id=int(pc_id)))
 
 
 @app.route("/pc/<int:pc_id>/sell", methods=["GET", "POST"])
@@ -373,7 +369,7 @@ def remove_component(item_id, pc_id):
         print("REMOVE COMPONENT ERROR:", e)
         return "Fehler beim Entfernen der Komponente", 500
 
-    return redirect(url_for("pc_detail", pc_id=ipc_id))  
+    return redirect(url_for("pc_detail", pc_id=pc_id))  
 
 @app.route("/pc/<int:pc_id>/delete")
 @login_required
@@ -413,20 +409,19 @@ def delete_component(item_id):
 def dashboard():
     # Aktuelle PCs (nicht verkauft)
     pcs = db_read("""
-        SELECT id, name, status, gesamtpreis 
-        FROM pc 
-        WHERE user_id=%s
-        AND id NOT IN (SELECT pc_id FROM sales)
+        SELECT id, name, status, gesamtpreis
+        FROM pc
+        WHERE user_id=%s AND status != 'verkauft'
         ORDER BY id DESC
     """, (current_user.id,)) or []
+
 
     for pc in pcs:
         pc["gesamtpreis"] = float(pc.get("gesamtpreis") or 0)
 
     # Verkäufe (verkaufte PCs)
     sales = db_read("""
-        SELECT s.id, s.pc_id, s.verkaufspreis, s.verkauft_am,
-               pc.name, pc.gesamtpreis
+        SELECT s.id, s.pc_id, s.verkaufspreis, s.verkauft_am, pc.name, pc.gesamtpreis
         FROM sales s
         JOIN pc pc ON s.pc_id = pc.id
         WHERE s.user_id=%s
