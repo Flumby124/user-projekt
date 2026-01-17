@@ -6,20 +6,17 @@
 
   <h2>Aktuelle PCs</h2>
   {% if pcs %}
-    <div class="row">
+    <ul class="list-group mb-4">
       {% for pc in pcs %}
-      <div class="col-md-4">
-        <div class="card mb-3 shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title">{{ pc.name }}</h5>
-            <p class="card-text"><strong>Preis:</strong> {{ pc.gesamtpreis }} CHF</p>
-            <p class="card-text"><strong>Status:</strong> {{ pc.status }}</p>
-            <a href="{{ url_for('pc_detail', pc_id=pc.id) }}" class="btn btn-primary btn-sm">Details</a>
-          </div>
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <strong>{{ pc.name }}</strong> <br>
+          Status: {{ pc.status }} | Preis: {{ pc.gesamtpreis }} CHF
         </div>
-      </div>
+        <a href="{{ url_for('pc_detail', pc_id=pc.id) }}" class="btn btn-sm btn-primary">Details</a>
+      </li>
       {% endfor %}
-    </div>
+    </ul>
   {% else %}
     <p>Du hast noch keine PCs erstellt.</p>
   {% endif %}
