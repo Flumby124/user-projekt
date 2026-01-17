@@ -331,12 +331,14 @@ def sell_pc(pc_id):
     return render_template("sell_pc.html", pc=pc)
 
 
+from flask import abort, redirect, url_for
+
 @app.route("/remove_component/<int:item_id>/<int:pc_id>")
 @login_required
 def remove_component(item_id, pc_id):
-
+    # Komponente abfragen
     component = db_read(
-        "SELECT preis, anzahl FROM pc_komponenten WHERE id=%s AND pc_id=%s",
+        "SELECT id, preis, anzahl, pc_id FROM pc_komponenten WHERE id=%s AND pc_id=%s",
         (item_id, pc_id),
         single=True
     )
@@ -345,23 +347,24 @@ def remove_component(item_id, pc_id):
         abort(404)
 
     try:
+        # Wenn mehrere vorhanden, nur Anzahl reduzieren
         if component["anzahl"] > 1:
-            
             db_write(
                 "UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s",
                 (item_id,)
             )
         else:
-            
+            # Löschen der Komponente + Untertabellen via ON DELETE CASCADE
             db_write(
                 "DELETE FROM pc_komponenten WHERE id=%s",
                 (item_id,)
             )
 
-       
+        # Gesamtpreis aktualisieren
+        preis = component["preis"] or 0  # Falls None
         db_write(
             "UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s",
-            (component["preis"], pc_id)
+            (preis, pc_id)
         )
 
     except Exception as e:
