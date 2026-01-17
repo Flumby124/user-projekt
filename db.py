@@ -39,6 +39,12 @@ def db_write(sql, params=None):
         cur.execute(sql, params or ())
         conn.commit()
         return cur.lastrowid
+    except Exception as e:
+        print("🔥 DB_WRITE ERROR 🔥")
+        print("SQL:", sql)
+        print("PARAMS:", params)
+        print("ERROR:", e)
+        raise
     finally:
         cur.close()
         conn.close()
