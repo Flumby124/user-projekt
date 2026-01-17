@@ -176,7 +176,7 @@ def pc_new():
         )
 
         # Direkt zur Komponentenseite des neuen PCs weiterleiten
-        return redirect(url_for("component_new", typ="cpu"))
+        return redirect(url_for("pc_list"))
 
     return render_template("pc_new.html")
 
