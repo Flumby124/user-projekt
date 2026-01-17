@@ -201,6 +201,17 @@ def pc_detail(pc_id):
 
     return render_template("pc_detail.html", pc=pc, komponenten=komponenten)
 
+@app.route("/pc/<int:pc_id>/add/<typ>")
+@login_required
+def component_list(pc_id, typ):
+    # Alle Komponenten des Users vom Typ, die noch keinem PC zugeordnet sind
+    komponenten = db_read("""
+        SELECT * FROM pc_komponenten
+        WHERE typ=%s AND pc_id IS NULL AND user_id=%s
+    """, (typ, current_user.id))
+    
+    return render_template("component_list.html", pc_id=pc_id, komponenten=komponenten, typ=typ)
+
 @app.route("/components/new/<typ>", methods=["GET", "POST"])
 @login_required
 def component_new(typ):

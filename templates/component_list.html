@@ -14,7 +14,7 @@
 >
 
 <div class="row">
-  {% for item in items %}
+  {% for item in komponenten %}
   <div class="col-sm-4 component-card"
        data-search="{{ (item.marke ~ ' ' ~ item.modell)|lower }}">
     <div class="panel panel-default">
@@ -39,26 +39,23 @@
         <p>Leistung: {{ item.watt }} W</p>
         {% endif %}
 
-        {% if typ == "ssd" and item.ssd_gb %}
-        <p>Speicher: {{ item.ssd_gb }} GB</p>
+        {% if typ == "ssd" and item.speichermenge_gb %}
+        <p>Speicher: {{ item.speichermenge_gb }} GB</p>
         {% endif %}
 
         {% if typ == "cpu" and item.frequenz_ghz %}
-        <p>Takt: {{ item.frequenz_ghz }} GHz · {{ item.cpu_watt }} W</p>
+        <p>Takt: {{ item.frequenz_ghz }} GHz · {{ item.watt }} W</p>
         {% endif %}
 
-        <!-- Formular zum Hinzufügen mit Anzahl -->
-        <form action="{{ url_for('add_component', pc_id=pc_id, typ=typ, item_id=item.id) }}" method="post">
-          <!-- <div class="form-group">
-            <label for="anzahl-{{ item.id }}">Anzahl hinzufügen:</label>
-            <input type="number" name="anzahl" id="anzahl-{{ item.id }}" value="1" min="1" max="{{ item.anzahl }}" class="form-control">
-          </div> -->
-          <button type="submit" class="btn btn-success btn-block">Hinzufügen</button>
-        </form>
+        <!-- Button zum Hinzufügen -->
+        <a href="{{ url_for('add_component', pc_id=pc_id, item_id=item.id) }}" 
+           class="btn btn-success btn-block" style="margin-top: 10px;">
+          Hinzufügen
+        </a>
 
         {% if not item.pc_id %}
         <a href="{{ url_for('delete_component', item_id=item.id) }}"
-           class="btn btn-danger btn-block"
+           class="btn btn-danger btn-block" style="margin-top: 5px;"
            onclick="return confirm('Bist du sicher, dass du diese Komponente komplett löschen willst?');">
           Löschen
         </a>
