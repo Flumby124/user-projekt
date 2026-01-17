@@ -337,7 +337,7 @@ from flask import abort, redirect, url_for
 @app.route("/remove_component/<int:item_id>/<int:pc_id>")
 @login_required
 def remove_component(item_id, pc_id):
-    # Hole die Komponente
+    # Hol die Komponente
     component = db_read(
         "SELECT id, typ, preis, anzahl FROM pc_komponenten WHERE id=%s AND pc_id=%s",
         (item_id, pc_id),
@@ -345,17 +345,17 @@ def remove_component(item_id, pc_id):
     )
 
     if not component:
-        abort(404)  # Komponente nicht gefunden
+        abort(404)
 
     try:
         preis = component["preis"] or 0
 
         if component["anzahl"] > 1:
-            # Nur Anzahl reduzieren
+            # Anzahl nur reduzieren
             db_write("UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s", (item_id,))
         else:
-            # Parent löschen → CASCADE löscht automatisch die Subtabellen
-            db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
+            # Nur pc_id auf NULL setzen, damit Subtabellen nicht gelöscht werden
+            db_write("UPDATE pc_komponenten SET pc_id = NULL WHERE id=%s", (item_id,))
 
         # Gesamtpreis des PCs anpassen
         db_write("UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s", (preis, pc_id))
