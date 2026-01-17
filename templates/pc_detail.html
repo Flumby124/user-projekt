@@ -9,10 +9,24 @@
 
 <h3>Komponenten hinzufügen</h3>
 
+{% set typ_names = {
+  'cpu': 'CPU',
+  'gpu': 'GPU',
+  'ram': 'RAM',
+  'ssd': 'SSD',
+  'psu': 'Netzteil',
+  'pc_case': 'Gehäuse',
+  'fans': 'Lüfter',
+  'kuehler': 'Kühler',
+  'argb': 'ARGB',
+  'extensions': 'Extensions',
+  'mobo': 'Mainboard'
+} %}
+
 <div class="btn-group">
   {% for typ in ['cpu','gpu','ram','ssd','psu','pc_case','fans','kuehler','argb','extensions','mobo'] %}
     <a class="btn btn-default" href="{{ url_for('component_list', pc_id=pc.id, typ=typ) }}">
-      {{ typ|capitalize }}
+      {{ typ_names[typ] }}
     </a>
   {% endfor %}
 </div>
@@ -32,7 +46,7 @@
 
   {% for k in komponenten %}
   <tr>
-    <td>{{ k.typ }}</td>
+    <td>{{ typ_names[k.typ] }}</td>
     <td>{{ k.marke }}</td>
     <td>{{ k.modell }}</td>
     <td>{{ k.preis }} CHF</td>
