@@ -335,6 +335,8 @@ from flask import abort, redirect, url_for
 
 @app.route("/remove_component/<int:item_id>/<int:pc_id>")
 @login_required
+@app.route("/remove_component/<int:item_id>/<int:pc_id>")
+@login_required
 def remove_component(item_id, pc_id):
     component = db_read(
         "SELECT id, typ, preis, anzahl FROM pc_komponenten WHERE id=%s AND pc_id=%s",
@@ -346,19 +348,27 @@ def remove_component(item_id, pc_id):
         abort(404)
 
     try:
-        preis = component["preis"] or 0  # Sicherheit gegen NULL
+        preis = component["preis"] or 0
+        typ = component["typ"]
 
         if component["anzahl"] > 1:
+            # nur Anzahl reduzieren
             db_write("UPDATE pc_komponenten SET anzahl = anzahl - 1 WHERE id=%s", (item_id,))
         else:
+            # Zuerst Subtabelle löschen
+            if typ in ["cpu", "gpu", "ram", "psu", "ssd", "mobo", "pc_case", "fans", "kuehler", "argb", "extensions"]:
+                db_write(f"DELETE FROM {typ} WHERE id=%s", (item_id,))
+            
+            # dann Parent löschen
             db_write("DELETE FROM pc_komponenten WHERE id=%s", (item_id,))
 
+        # Gesamtpreis aktualisieren
         db_write("UPDATE pc SET gesamtpreis = gesamtpreis - %s WHERE id=%s", (preis, pc_id))
 
     except Exception as e:
         import traceback
         print("🔥 REMOVE COMPONENT ERROR 🔥")
-        traceback.print_exc()   # <-- Das zeigt jetzt die echte Ursache
+        traceback.print_exc()
         abort(500)
 
     return redirect(url_for("pc_detail", pc_id=pc_id))
